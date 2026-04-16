@@ -1,8 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import {
-  StageHistoryItem,
-  TransactionStage,
-} from './schemas/transaction.schema';
+import type { TransactionStage } from './enums/transaction-stage.enum';
+import { StageHistoryItem } from './schemas/transaction.schema';
 
 const ALLOWED_TRANSITIONS: Record<TransactionStage, TransactionStage[]> = {
   agreement: ['earnest_money'],
@@ -32,5 +30,9 @@ export class StageTransitionService {
       toStage,
       changedAt: new Date(),
     };
+  }
+
+  isFinalStage(stage: TransactionStage) {
+    return stage === 'completed';
   }
 }

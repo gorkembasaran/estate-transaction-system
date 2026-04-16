@@ -1,14 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-
-export const TRANSACTION_STAGES = [
-  'agreement',
-  'earnest_money',
-  'title_deed',
-  'completed',
-] as const;
-
-export type TransactionStage = (typeof TRANSACTION_STAGES)[number];
+import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
+import type { TransactionStage } from '../enums/transaction-stage.enum';
 
 export type TransactionDocument = HydratedDocument<Transaction>;
 
@@ -29,7 +22,7 @@ export class FinancialBreakdown {
   @Prop({ required: true, trim: true })
   sellingAgentReason: string;
 
-  @Prop({ required: true })
+  @Prop({ default: Date.now, required: true })
   calculatedAt: Date;
 }
 
@@ -52,7 +45,7 @@ export class StageHistoryItem {
   })
   toStage: TransactionStage;
 
-  @Prop({ required: true })
+  @Prop({ default: Date.now, required: true })
   changedAt: Date;
 }
 
@@ -73,7 +66,7 @@ export class Transaction {
   propertyTitle: string;
 
   @Prop({
-    min: 0,
+    min: 0.01,
     required: true,
   })
   totalServiceFee: number;

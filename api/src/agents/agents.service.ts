@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateAgentDto } from './dto/create-agent.dto';
@@ -11,8 +16,18 @@ export class AgentsService {
     private readonly agentModel: Model<AgentDocument>,
   ) {}
 
-  createAgent(createAgentDto: CreateAgentDto) {
-    return this.agentModel.create(createAgentDto);
+  async createAgent(createAgentDto: CreateAgentDto) {
+    try {
+      return await this.agentModel.create(createAgentDto);
+    } catch (error) {
+      if (this.isDuplicateEmailError(error)) {
+        throw new ConflictException(
+          `Agent with email "${createAgentDto.email}" already exists`,
+        );
+      }
+
+      throw error;
+    }
   }
 
   getAllAgents() {
@@ -40,7 +55,16 @@ export class AgentsService {
 
   private assertValidObjectId(id: string) {
     if (!Types.ObjectId.isValid(id)) {
-      throw new NotFoundException(`Agent with id "${id}" was not found`);
+      throw new BadRequestException(`Invalid agent id: "${id}"`);
     }
+  }
+
+  private isDuplicateEmailError(error: unknown) {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 11000
+    );
   }
 }
