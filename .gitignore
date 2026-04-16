@@ -1,0 +1,17 @@
+.DS_Store
+
+node_modules
+dist
+coverage
+
+.env
+.env.*
+!.env.example
+
+api/node_modules
+api/dist
+api/coverage
+
+web/frontend/node_modules
+web/frontend/.nuxt
+web/frontend/.output
