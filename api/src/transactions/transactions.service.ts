@@ -76,7 +76,7 @@ export class TransactionsService {
       this.stageTransitionService.createHistoryItem(previousStage, nextStage),
     );
 
-    if (this.stageTransitionService.isFinalStage(nextStage)) {
+    if (nextStage === 'completed') {
       transaction.breakdown = this.commissionService.calculate({
         totalServiceFee: transaction.totalServiceFee,
         listingAgentId: transaction.listingAgentId,

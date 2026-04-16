@@ -1,9 +1,13 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AgentsService } from '../agents/agents.service';
 import { CommissionService } from './commission.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { FinancialBreakdown } from './schemas/transaction.schema';
+import type { TransactionStage } from './enums/transaction-stage.enum';
+import {
+  FinancialBreakdown,
+  StageHistoryItem,
+} from './schemas/transaction.schema';
 import { StageTransitionService } from './stage-transition.service';
 import { TransactionsService } from './transactions.service';
 
@@ -13,11 +17,21 @@ type TransactionModelMock = {
   findById: jest.Mock;
 };
 
+type TransactionDocumentMock = {
+  breakdown: FinancialBreakdown | null;
+  listingAgentId: string;
+  save: jest.Mock;
+  sellingAgentId: string;
+  stage: TransactionStage;
+  stageHistory: StageHistoryItem[];
+  totalServiceFee: number;
+};
+
 type AgentServiceMock = Pick<AgentsService, 'validateAgentExists'>;
 type CommissionServiceMock = Pick<CommissionService, 'calculate'>;
 type StageTransitionServiceMock = Pick<
   StageTransitionService,
-  'assertCanTransition' | 'createHistoryItem' | 'isFinalStage'
+  'assertCanTransition' | 'createHistoryItem'
 >;
 
 describe('TransactionsService', () => {
@@ -58,7 +72,6 @@ describe('TransactionsService', () => {
         toStage: 'agreement',
         changedAt: new Date('2026-04-16T12:00:00.000Z'),
       }),
-      isFinalStage: jest.fn().mockReturnValue(false),
     };
 
     service = new TransactionsService(
@@ -83,6 +96,19 @@ describe('TransactionsService', () => {
     );
   });
 
+  it('does not create a transaction when agent validation fails', async () => {
+    agentsService.validateAgentExists.mockRejectedValueOnce(
+      new NotFoundException(`Agent with id "${listingAgentId}" was not found`),
+    );
+
+    await expect(
+      service.createTransaction(createTransactionDto),
+    ).rejects.toThrow(NotFoundException);
+
+    expect(transactionModel.create).not.toHaveBeenCalled();
+    expect(stageTransitionService.createHistoryItem).not.toHaveBeenCalled();
+  });
+
   it('starts every created transaction in agreement stage', async () => {
     transactionModel.create.mockImplementation(async (payload) => payload);
 
@@ -94,14 +120,20 @@ describe('TransactionsService', () => {
     });
     expect(transactionModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        propertyTitle: createTransactionDto.propertyTitle,
+        totalServiceFee: createTransactionDto.totalServiceFee,
+        currency: createTransactionDto.currency,
+        listingAgentId: createTransactionDto.listingAgentId,
+        sellingAgentId: createTransactionDto.sellingAgentId,
         stage: 'agreement',
         breakdown: null,
       }),
     );
+    expect(commissionService.calculate).not.toHaveBeenCalled();
   });
 
   it('adds an initial stage history item when creating a transaction', async () => {
-    const historyItem = {
+    const historyItem: StageHistoryItem = {
       fromStage: null,
       toStage: 'agreement',
       changedAt: new Date('2026-04-16T12:00:00.000Z'),
@@ -116,6 +148,11 @@ describe('TransactionsService', () => {
       'agreement',
     );
     expect(transaction.stageHistory).toEqual([historyItem]);
+    expect(transactionModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stageHistory: [historyItem],
+      }),
+    );
   });
 
   it('calculates and stores breakdown when a transaction reaches completed stage', async () => {
@@ -135,12 +172,14 @@ describe('TransactionsService', () => {
     });
 
     transactionModel.findById.mockReturnValue(createFindByIdQuery(transaction));
-    stageTransitionService.createHistoryItem.mockReturnValue({
+    const completedHistoryItem: StageHistoryItem = {
       fromStage: 'title_deed',
       toStage: 'completed',
       changedAt: new Date('2026-04-16T13:00:00.000Z'),
-    });
-    stageTransitionService.isFinalStage.mockReturnValue(true);
+    };
+    stageTransitionService.createHistoryItem.mockReturnValue(
+      completedHistoryItem,
+    );
     commissionService.calculate.mockReturnValue(breakdown);
 
     const result = await service.updateTransactionStage(transactionId, {
@@ -156,7 +195,45 @@ describe('TransactionsService', () => {
       listingAgentId,
       sellingAgentId,
     });
+    expect(transaction.stage).toBe('completed');
+    expect(transaction.stageHistory).toEqual([completedHistoryItem]);
     expect(transaction.breakdown).toBe(breakdown);
+    expect(transaction.save).toHaveBeenCalledTimes(1);
+    expect(result).toBe(transaction);
+  });
+
+  it('updates stage, adds history, and skips breakdown for valid non-final transitions', async () => {
+    const transaction = createTransactionDocumentMock({
+      stage: 'agreement',
+      totalServiceFee: 1000,
+      listingAgentId,
+      sellingAgentId,
+    });
+    const historyItem: StageHistoryItem = {
+      fromStage: 'agreement',
+      toStage: 'earnest_money',
+      changedAt: new Date('2026-04-16T13:00:00.000Z'),
+    };
+
+    transactionModel.findById.mockReturnValue(createFindByIdQuery(transaction));
+    stageTransitionService.createHistoryItem.mockReturnValue(historyItem);
+
+    const result = await service.updateTransactionStage(transactionId, {
+      stage: 'earnest_money',
+    });
+
+    expect(stageTransitionService.assertCanTransition).toHaveBeenCalledWith(
+      'agreement',
+      'earnest_money',
+    );
+    expect(stageTransitionService.createHistoryItem).toHaveBeenCalledWith(
+      'agreement',
+      'earnest_money',
+    );
+    expect(commissionService.calculate).not.toHaveBeenCalled();
+    expect(transaction.stage).toBe('earnest_money');
+    expect(transaction.breakdown).toBeNull();
+    expect(transaction.stageHistory).toEqual([historyItem]);
     expect(transaction.save).toHaveBeenCalledTimes(1);
     expect(result).toBe(transaction);
   });
@@ -185,7 +262,125 @@ describe('TransactionsService', () => {
     expect(transaction.stage).toBe('agreement');
     expect(transaction.stageHistory).toEqual([]);
   });
+
+  it('returns all transactions using populated agent fields and newest-first sorting', async () => {
+    const transactions = [{ _id: transactionId }];
+    const query = createFindQuery(transactions);
+    transactionModel.find.mockReturnValue(query);
+
+    const result = await service.getAllTransactions();
+
+    expect(transactionModel.find).toHaveBeenCalledWith();
+    expect(query.populate).toHaveBeenCalledWith(
+      'listingAgentId',
+      'fullName email',
+    );
+    expect(query.populate).toHaveBeenCalledWith(
+      'sellingAgentId',
+      'fullName email',
+    );
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.exec).toHaveBeenCalledTimes(1);
+    expect(result).toBe(transactions);
+  });
+
+  it('returns an empty transaction list when no transactions exist', async () => {
+    const query = createFindQuery([]);
+    transactionModel.find.mockReturnValue(query);
+
+    await expect(service.getAllTransactions()).resolves.toEqual([]);
+
+    expect(query.exec).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns a transaction with populated agent fields', async () => {
+    const transaction = createTransactionDocumentMock({
+      stage: 'agreement',
+      totalServiceFee: 1000,
+      listingAgentId,
+      sellingAgentId,
+    });
+    const query = createFindByIdQuery(transaction);
+    transactionModel.findById.mockReturnValue(query);
+
+    const result = await service.getTransactionById(transactionId);
+
+    expect(transactionModel.findById).toHaveBeenCalledWith(transactionId);
+    expect(query.populate).toHaveBeenCalledWith(
+      'listingAgentId',
+      'fullName email',
+    );
+    expect(query.populate).toHaveBeenCalledWith(
+      'sellingAgentId',
+      'fullName email',
+    );
+    expect(query.exec).toHaveBeenCalledTimes(1);
+    expect(result).toBe(transaction);
+  });
+
+  it('returns the stored breakdown for a transaction', async () => {
+    const breakdown: FinancialBreakdown = {
+      agencyAmount: 500,
+      listingAgentAmount: 250,
+      sellingAgentAmount: 250,
+      listingAgentReason: 'listing reason',
+      sellingAgentReason: 'selling reason',
+      calculatedAt: new Date('2026-04-16T12:00:00.000Z'),
+    };
+    const transaction = createTransactionDocumentMock({
+      stage: 'completed',
+      totalServiceFee: 1000,
+      listingAgentId,
+      sellingAgentId,
+    });
+    transaction.breakdown = breakdown;
+
+    transactionModel.findById.mockReturnValue(createFindByIdQuery(transaction));
+
+    await expect(service.getTransactionBreakdown(transactionId)).resolves.toBe(
+      breakdown,
+    );
+  });
+
+  it('returns null when transaction breakdown is not calculated yet', async () => {
+    const transaction = createTransactionDocumentMock({
+      stage: 'agreement',
+      totalServiceFee: 1000,
+      listingAgentId,
+      sellingAgentId,
+    });
+
+    transactionModel.findById.mockReturnValue(createFindByIdQuery(transaction));
+
+    await expect(
+      service.getTransactionBreakdown(transactionId),
+    ).resolves.toBeNull();
+  });
+
+  it('throws BadRequestException when transaction id is invalid', async () => {
+    await expect(service.getTransactionById('invalid-id')).rejects.toThrow(
+      BadRequestException,
+    );
+
+    expect(transactionModel.findById).not.toHaveBeenCalled();
+  });
+
+  it('throws NotFoundException when transaction cannot be found', async () => {
+    transactionModel.findById.mockReturnValue(createFindByIdQuery(null));
+
+    await expect(service.getTransactionById(transactionId)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
 });
+
+function createFindQuery(result: unknown) {
+  return {
+    exec: jest.fn().mockResolvedValue(result),
+    populate: jest.fn().mockReturnThis(),
+    sort: jest.fn().mockReturnThis(),
+  };
+}
 
 function createFindByIdQuery(result: unknown) {
   return {
@@ -202,10 +397,10 @@ function createTransactionDocumentMock({
 }: {
   listingAgentId: string;
   sellingAgentId: string;
-  stage: 'agreement' | 'earnest_money' | 'title_deed' | 'completed';
+  stage: TransactionStage;
   totalServiceFee: number;
-}) {
-  const transaction = {
+}): TransactionDocumentMock {
+  const transaction: TransactionDocumentMock = {
     breakdown: null,
     listingAgentId,
     save: jest.fn(),

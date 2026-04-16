@@ -31,8 +31,4 @@ export class StageTransitionService {
       changedAt: new Date(),
     };
   }
-
-  isFinalStage(stage: TransactionStage) {
-    return stage === 'completed';
-  }
 }
