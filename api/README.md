@@ -1,98 +1,423 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Estate Transaction & Commission Management System
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+This project is a backend-first implementation of an estate transaction and commission management system developed as part of a technical case study.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The system manages real estate transactions between agents, enforces stage transitions, and automatically calculates financial commissions when a transaction is completed.
 
-## Description
+At the current stage, the backend is fully implemented and tested. The frontend implementation is planned as the next phase.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+# Project Overview
 
-```bash
-$ npm install
-```
+The goal of this system is to manage real estate transactions between agents while ensuring:
 
-## Compile and run the project
+- Correct transaction lifecycle progression
+- Controlled stage transitions
+- Automatic commission distribution
+- Transparent financial breakdown tracking
+- Historical tracking of transaction stages
 
-```bash
-# development
-$ npm run start
+The system enforces strict business rules and records all transitions and financial changes for auditability.
 
-# watch mode
-$ npm run start:dev
+---
 
-# production mode
-$ npm run start:prod
-```
+# Current Implementation Status
 
-## Run tests
+## Backend
+✔ Implemented  
+✔ Fully unit tested  
+✔ Business logic validated  
+✔ Coverage focused on service layer  
 
-```bash
-# unit tests
-$ npm run test
+## Frontend
+⏳ Pending  
+Planned as the next phase of development.
 
-# e2e tests
-$ npm run test:e2e
+---
 
-# test coverage
-$ npm run test:cov
-```
+# Tech Stack
 
-## Deployment
+## Backend
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- Node.js
+- TypeScript
+- NestJS
+- MongoDB
+- Mongoose
+- Jest
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Testing
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+- Jest
+- Unit testing at service level
+- Business logic coverage prioritized
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+# API Base URL
 
-Check out a few resources that may come in handy when working with NestJS:
+Default:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+http://localhost:3000
 
-## Support
+---
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Transaction Stages
 
-## Stay in touch
+The system supports the following stages:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- agreement
+- earnest_money
+- title_deed
+- completed
 
-## License
+---
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Implemented Backend Features
+
+## Agents Module
+
+Handles agent management.
+
+Implemented features:
+
+- Create new agent
+- Prevent duplicate emails
+- Retrieve agent by ID
+- Retrieve active agents
+- Validate agent existence
+- Sort agents by newest first
+
+Business rules:
+
+- Agent emails must be unique
+- Only active agents are returned in list queries
+- Invalid ObjectId inputs are rejected
+
+---
+
+## Transactions Module
+
+Handles transaction lifecycle and financial processing.
+
+Implemented features:
+
+- Create new transaction
+- Automatically start at `agreement`
+- Update transaction stage
+- Validate stage transitions
+- Store stage history
+- Populate agent references
+- Calculate financial breakdown
+- Retrieve transactions
+- Retrieve breakdown information
+
+---
+
+## Commission Calculation
+
+Commission distribution is handled by:
+
+`CommissionService`
+
+Rules:
+
+- 50% → Agency
+- 50% → Agent pool
+- Same agent (listing + selling):
+  - Receives full agent portion
+- Different agents:
+  - Split agent portion equally
+
+Breakdown includes:
+
+- agencyAmount
+- listingAgentAmount
+- sellingAgentAmount
+- listingAgentReason
+- sellingAgentReason
+- calculatedAt
+
+---
+
+## Stage Transition System
+
+Managed by:
+
+`StageTransitionService`
+
+Allowed transitions:
+
+agreement → earnest_money  
+earnest_money → title_deed  
+title_deed → completed  
+completed → (no further transitions)
+
+Invalid transitions:
+
+- Skipped stages
+- Reverse transitions
+- Same-stage transitions
+
+All transitions are recorded in:
+
+`stageHistory`
+
+---
+
+# Data Model Overview
+
+## Agent
+
+Stored as a separate collection.
+
+Fields:
+
+- fullName
+- email
+- isActive
+- createdAt
+- updatedAt
+
+---
+
+## Transaction
+
+Stores the core business record.
+
+Fields:
+
+- propertyTitle
+- totalServiceFee
+- currency
+- listingAgentId
+- sellingAgentId
+- stage
+- stageHistory
+- breakdown
+- createdAt
+- updatedAt
+
+---
+
+## Stage History
+
+Stored inside transaction.
+
+Fields:
+
+- fromStage
+- toStage
+- changedAt
+
+Used for:
+
+- auditability
+- tracking transaction lifecycle
+
+---
+
+## Financial Breakdown
+
+Stored inside transaction.
+
+Fields:
+
+- agencyAmount
+- listingAgentAmount
+- sellingAgentAmount
+- listingAgentReason
+- sellingAgentReason
+- calculatedAt
+
+Stored only after:
+
+`completed` stage
+
+---
+
+# Project Structure
+
+project-root/
+│
+├── .env  
+├── src/
+│   ├── agents/
+│   │   ├── agents.controller.ts
+│   │   ├── agents.service.ts
+│   │   ├── dto/
+│   │   └── schemas/
+│   │
+│   ├── transactions/
+│   │   ├── transactions.controller.ts
+│   │   ├── transactions.service.ts
+│   │   ├── commission.service.ts
+│   │   ├── stage-transition.service.ts
+│   │   ├── dto/
+│   │   ├── enums/
+│   │   └── schemas/
+│   │
+│   ├── database/
+│   ├── config/
+│   ├── main.ts
+│   └── app.module.ts
+
+---
+
+# Database
+
+This project uses MongoDB.
+
+You can use:
+
+- Local MongoDB
+- MongoDB Atlas
+
+Default local example:
+
+mongodb://localhost:27017/estate-db
+
+---
+
+# Environment Variables
+
+Create a `.env` file:
+
+MONGO_URI=mongodb://localhost:27017/estate-db  
+PORT=3000
+
+---
+
+# Installation
+
+Install dependencies:
+
+npm install
+
+---
+
+# Running the Backend
+
+Development mode:
+
+npm run start:dev
+
+Production build:
+
+npm run build  
+npm run start:prod
+
+Default server:
+
+http://localhost:3000
+
+---
+
+# Running Tests
+
+Run all tests:
+
+npm run test
+
+Watch mode:
+
+npm run test:watch
+
+Run coverage:
+
+npm run test:cov
+
+---
+
+# Test Coverage Strategy
+
+Coverage is intentionally focused on:
+
+- Business logic services
+
+Included:
+
+agents/**/*.service.ts  
+transactions/**/*.service.ts  
+
+Reason:
+
+Service layer contains the core business logic and rule enforcement.
+
+Controllers and DTOs are intentionally excluded since they mainly handle routing and validation, not business rules.
+
+---
+
+# API Overview
+
+## Agents
+
+POST /agents  
+GET /agents  
+GET /agents/:id  
+
+## Transactions
+
+POST /transactions  
+GET /transactions  
+GET /transactions/:id  
+PATCH /transactions/:id/stage  
+GET /transactions/:id/breakdown  
+
+---
+
+# Error Handling
+
+The system handles:
+
+- Invalid ObjectId → BadRequestException
+- Missing resources → NotFoundException
+- Duplicate email → ConflictException
+- Invalid stage transition → BadRequestException
+- Negative service fee → BadRequestException
+
+---
+
+# Next Steps
+
+Planned frontend implementation:
+
+- Transaction list page
+- Transaction detail page
+- Stage update UI
+- Financial breakdown display
+- Agent management UI
+
+Frontend stack (planned):
+
+- Nuxt 3
+- Pinia
+- TailwindCSS
+
+---
+
+# Design Documentation
+
+Detailed architectural decisions are documented in:
+
+DESIGN.md
+
+This includes:
+
+- Data modeling decisions
+- Service responsibilities
+- Transaction lifecycle design
+- Commission calculation logic
+- Testing strategy
+
+---
+
+# Notes
+
+This implementation prioritizes:
+
+- Data consistency
+- Business rule correctness
+- Maintainability
+- Testability
