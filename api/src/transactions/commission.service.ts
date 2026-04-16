@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { FinancialBreakdown } from './schemas/transaction.schema';
 
@@ -11,6 +11,10 @@ interface CalculateCommissionInput {
 @Injectable()
 export class CommissionService {
   calculate(input: CalculateCommissionInput): FinancialBreakdown {
+    if (input.totalServiceFee < 0) {
+      throw new BadRequestException('Total service fee cannot be negative');
+    }
+
     const agencyAmount = this.roundMoney(input.totalServiceFee * 0.5);
     const agentPoolAmount = this.roundMoney(
       input.totalServiceFee - agencyAmount,
