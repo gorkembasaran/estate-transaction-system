@@ -1,172 +1,161 @@
-# DESIGN.md
+# Estate Transaction System Design
 
-# Estate Transaction & Commission Management System  
-## Backend Design Document
+## Overview
 
-This document explains the architectural and design decisions behind the current backend implementation of the estate transaction and commission management system.
+This document explains the current backend design for the estate transaction and commission management technical case.
 
-The purpose of this system is to manage real estate transactions, enforce transaction lifecycle rules, and calculate commission distribution in a traceable and maintainable way.
+The implemented backend focuses on transaction lifecycle control, agent validation, commission calculation, and traceable financial breakdowns. It is built with NestJS, TypeScript, MongoDB, Mongoose, and Jest.
 
-At the current stage, this document reflects the **implemented backend architecture**. Frontend work is planned as the next phase and is listed separately under future work.
+Frontend work is pending. This document only describes implemented backend behavior and clearly separates future work from completed work.
 
----
+## Problem Understanding
 
-# 1. Problem Understanding
+The case describes a real estate agency process where transactions move through several stages before completion. After completion, the total service fee must be distributed between the agency and the involved agents according to defined business rules.
 
-The case requires a system that can:
+The main backend responsibilities are:
 
-- Track the lifecycle of a real estate transaction
-- Enforce valid stage transitions
-- Calculate the financial distribution for the agency and agents
-- Preserve traceability of transaction progress
-- Expose an API that can later be consumed by a frontend application
+- manage agents
+- create and retrieve transactions
+- enforce valid transaction stage transitions
+- calculate commission distribution
+- preserve transaction traceability
+- expose APIs that can later be consumed by a frontend
 
-The main business difficulty is not simple CRUD. The core challenge is the correct implementation of domain rules:
+The core challenge is not basic CRUD. The important part is making the lifecycle and commission rules explicit, testable, and difficult to misuse.
 
-- A transaction must move through a defined set of stages
-- Invalid stage jumps should be rejected
-- Commission calculation depends on the relationship between the listing agent and the selling agent
-- Completed transactions must expose a clear financial breakdown
+## Scope of Current Implementation
 
-Because of this, the project was designed around **business rules first**, rather than around database persistence alone.
+Implemented:
 
----
-
-# 2. Scope of Current Implementation
-
-## Implemented
-
-The current implementation includes:
-
-- NestJS backend
-- MongoDB / Mongoose integration
-- Agents module
-- Transactions module
-- Commission calculation service
-- Stage transition service
-- Validation and environment configuration
-- Unit tests for the service layer
-- Coverage focused on business logic services
-
-## Not Yet Implemented
-
-The following are intentionally not yet implemented:
-
-- Frontend pages and components
-- Frontend state management
-- Deployment configuration
-- Authentication / authorization
-- Pagination / filtering
-- Swagger / OpenAPI documentation
-- Integration tests / end-to-end tests
-- CI/CD configuration
-
-These items were intentionally deferred to keep the first phase focused on correctness of the backend domain logic.
-
----
-
-# 3. High-Level Architecture
-
-The backend uses a modular NestJS structure.
-
-## Main modules
-
+- NestJS backend under `api/`
+- MongoDB / Mongoose database integration
 - `AgentsModule`
 - `TransactionsModule`
-- `DatabaseModule`
-- global configuration / bootstrap setup
+- `CommissionService`
+- `StageTransitionService`
+- global validation pipe
+- environment validation
+- dedicated database module
+- service-level Jest unit tests
+- service-focused coverage configuration
 
-The system follows a layered structure:
+Not implemented yet:
 
-- **Controller layer**: HTTP routing and request handling
-- **Service layer**: business rules and orchestration
-- **Schema / persistence layer**: Mongoose models and document structure
-- **Configuration layer**: environment validation and database setup
+- functional frontend pages, components, and state management
+- deployment configuration
+- live API URL
+- live frontend URL
+- authentication or authorization
+- pagination, filtering, or search
+- Swagger / OpenAPI generation
+- Docker configuration
+- CI/CD configuration
+- seed scripts
 
-The most important architectural decision in this implementation is that **business rules are handled explicitly in services**, not hidden in controllers or mixed into schemas.
+## Architecture Decisions
 
----
+The backend follows a modular NestJS structure:
 
-# 4. Module Structure
+- controllers handle HTTP routes
+- DTOs validate request payload shape
+- services contain business rules and orchestration
+- schemas define MongoDB document structure
+- database module owns MongoDB connection setup
+- config validation protects application startup
 
-## 4.1 Agents Module
+The main design choice is to keep business behavior in services rather than spreading it across controllers or Mongoose schemas.
 
-The `AgentsModule` is responsible for agent-related operations.
+This keeps the code easier to:
 
-### Responsibilities
+- test
+- explain
+- extend
+- review in a technical interview
 
-- Create agent
-- Prevent duplicate emails
-- List active agents
-- Retrieve agent by ID
-- Validate that an agent exists
+## Module Structure
 
-### Files
+Current backend structure:
 
-- `agents.controller.ts`
-- `agents.service.ts`
-- `dto/`
-- `schemas/`
+```text
+api/src/
+├── agents/
+│   ├── agents.controller.ts
+│   ├── agents.module.ts
+│   ├── agents.service.ts
+│   ├── agents.service.spec.ts
+│   ├── dto/
+│   │   └── create-agent.dto.ts
+│   └── schemas/
+│       └── agent.schema.ts
+├── transactions/
+│   ├── commission.service.ts
+│   ├── commission.service.spec.ts
+│   ├── stage-transition.service.ts
+│   ├── stage-transition.service.spec.ts
+│   ├── transactions.controller.ts
+│   ├── transactions.module.ts
+│   ├── transactions.service.ts
+│   ├── transactions.service.spec.ts
+│   ├── dto/
+│   ├── enums/
+│   └── schemas/
+├── config/
+│   └── env.validation.ts
+├── database/
+│   └── database.module.ts
+├── app.module.ts
+└── main.ts
+```
 
-The module is intentionally small because agent management is not the core domain complexity of the case. However, it is still important because transaction creation depends on valid agent references.
+### Agents Module
 
----
+Responsibilities:
 
-## 4.2 Transactions Module
+- create agents
+- list active agents
+- retrieve an agent by id
+- validate agent existence
+- handle duplicate email conflicts
 
-The `TransactionsModule` is the central module of the system.
+### Transactions Module
 
-### Responsibilities
+Responsibilities:
 
-- Create transaction
-- Retrieve transactions
-- Retrieve transaction details
-- Update transaction stage
-- Return transaction breakdown
-- Orchestrate stage transition validation
-- Orchestrate commission calculation
+- create transactions
+- list transactions
+- retrieve transaction details
+- update transaction stage
+- return transaction breakdown
+- coordinate agent validation
+- coordinate stage-transition validation
+- coordinate commission calculation
 
-### Files
+### Database Module
 
-- `transactions.controller.ts`
-- `transactions.service.ts`
-- `commission.service.ts`
-- `stage-transition.service.ts`
-- `dto/`
-- `schemas/`
-- `enums/`
+Responsibilities:
 
-This module was designed so that transaction orchestration is separated from the lower-level business rules.
+- configure Mongoose connection
+- read `MONGODB_URI` and `MONGODB_DATABASE`
+- disable automatic index creation in production
+- keep infrastructure setup outside domain modules
 
----
+## Data Modeling Decisions
 
-## 4.3 Database Module
+MongoDB is used as the persistence layer through Mongoose schemas.
 
-The `DatabaseModule` wraps MongoDB connection setup through `MongooseModule.forRootAsync`.
+The transaction document is treated as the main business aggregate because it owns:
 
-### Responsibilities
+- current lifecycle stage
+- stage history
+- agent references
+- final financial breakdown
+- transaction fee and currency
 
-- Read MongoDB connection config from environment variables
-- Provide a clean entry point for database configuration
-- Keep connection logic outside business modules
+## Why Agents Are a Separate Collection
 
-This separation keeps infrastructure concerns away from domain services.
+Agents are stored in a separate `agents` collection.
 
----
-
-# 5. Data Modeling Decisions
-
-The project uses MongoDB because the technical case requires it and because the domain fits well into document-based storage.
-
-The data model was designed to keep the **transaction** as the main business aggregate.
-
----
-
-## 5.1 Agent as a Separate Collection
-
-Agents are stored in their own collection.
-
-### Agent fields
+Current agent fields:
 
 - `fullName`
 - `email`
@@ -174,65 +163,46 @@ Agents are stored in their own collection.
 - `createdAt`
 - `updatedAt`
 
-### Why agents are separate
+Reasons for using a separate collection:
 
-Agents were modeled as a separate collection for the following reasons:
+- agents can be reused across many transactions
+- transaction documents avoid duplicating agent profile data
+- transaction creation can validate that referenced agents exist
+- agent email uniqueness can be enforced at the agent level
+- future reporting can group transactions by agent
 
-1. **Avoiding data duplication**  
-   Agent information should not be copied into every transaction as raw strings.
+Transactions store `listingAgentId` and `sellingAgentId` as `ObjectId` references to the agent collection.
 
-2. **Referential consistency**  
-   A transaction should point to a known agent record.
+## Database Index Considerations
 
-3. **Validation**  
-   The system needs to verify that the listing and selling agents actually exist.
+Indexes are used to support lookup performance and data integrity.
 
-4. **Future extensibility**  
-   A separate agent model makes future reporting and filtering much easier.
+Current indexes:
 
-5. **Cleaner transaction documents**  
-   Transactions store references, not repeated copies of the same agent profile data.
+- MongoDB-managed `_id` indexes for agent and transaction lookup by id
+- unique `email` index in the `Agent` collection
+- compound transaction index on `stage` and `createdAt`
+- transaction index on `listingAgentId`
+- transaction index on `sellingAgentId`
 
-Because of this, `listingAgentId` and `sellingAgentId` are stored as `ObjectId` references to `Agent`.
+The agent email index protects data integrity by preventing duplicate agent emails at the database level. The transaction indexes support common backend access patterns such as stage-based retrieval and agent-related transaction lookup.
 
----
+Future improvements may include additional query-driven compound indexes after frontend usage patterns, pagination, and filtering requirements are implemented.
 
-## 5.2 Transaction as the Core Aggregate
+## Performance Considerations
 
-The transaction document is the main business record.
+Current design choices support performance without premature optimization.
 
-### Transaction fields
+- Embedded financial breakdown avoids additional collection lookups.
+- Embedded stage history allows full lifecycle retrieval in a single read.
+- Unique email index prevents duplicate agent creation efficiently.
+- Future query-driven indexes can be introduced when real usage patterns emerge.
 
-- `propertyTitle`
-- `totalServiceFee`
-- `currency`
-- `listingAgentId`
-- `sellingAgentId`
-- `stage`
-- `breakdown`
-- `stageHistory`
-- `createdAt`
-- `updatedAt`
+## Why Financial Breakdown Is Embedded in Transaction
 
-### Why transaction is the main aggregate
+Financial breakdown is embedded directly inside the transaction document.
 
-The case revolves around the lifecycle of a single estate transaction.  
-A transaction owns:
-
-- the current stage
-- the history of stage changes
-- the financial breakdown
-- the agent references involved in the deal
-
-That makes it the natural aggregate root of the domain.
-
----
-
-## 5.3 Why Financial Breakdown Is Embedded
-
-Financial breakdown is stored directly inside the transaction document instead of being moved to a separate collection.
-
-### Breakdown fields
+Current breakdown fields:
 
 - `agencyAmount`
 - `listingAgentAmount`
@@ -241,507 +211,319 @@ Financial breakdown is stored directly inside the transaction document instead o
 - `sellingAgentReason`
 - `calculatedAt`
 
-### Why this was chosen
+This was chosen because the breakdown belongs to exactly one transaction and does not need an independent lifecycle.
 
-Financial breakdown is tightly coupled to one transaction and does not need an independent lifecycle.
+Embedding provides:
 
-Embedding it provides several advantages:
+- a single read for transaction detail and financial result
+- a clear snapshot of the completed transaction
+- lower persistence complexity
+- simpler frontend consumption later
 
-1. **Single read for transaction details**  
-   The frontend can fetch one transaction and already have its financial result.
+The breakdown remains `null` until the transaction reaches `completed`.
 
-2. **Tight domain coupling**  
-   Breakdown has no meaning without a transaction.
+## Why Stage History Is Stored
 
-3. **Lower complexity**  
-   A separate collection would introduce unnecessary join-like logic and additional queries.
+`stageHistory` is stored as an embedded array inside the transaction document.
 
-4. **Snapshot behavior**  
-   Once the transaction reaches `completed`, the final calculation is stored as part of that transaction state.
-
-This approach is well suited for the current scope of the case.
-
----
-
-## 5.4 Why Stage History Is Stored
-
-`stageHistory` is stored inside the transaction document as an array.
-
-### Stage history fields
+Current stage history fields:
 
 - `fromStage`
 - `toStage`
 - `changedAt`
 
-### Why this was chosen
+This supports traceability. The system should show not only the current stage, but also how the transaction reached that stage.
 
-The case explicitly mentions traceability.  
-Keeping only the current stage would not be enough to support that idea.
+The initial history item is created when the transaction is created:
 
-Stage history was added because it provides:
+```text
+fromStage: null
+toStage: agreement
+```
 
-1. **Lifecycle traceability**
-2. **Auditability**
-3. **Simpler frontend timeline display**
-4. **More explicit business event tracking**
+Each valid stage update appends a new history item.
 
-The first entry is created when the transaction is created:
+## Why Business Rules Are Handled in Services Rather Than Schemas
 
-- `fromStage: null`
-- `toStage: agreement`
+Schemas define persistence structure:
 
-Subsequent transitions append new history items.
-
----
-
-# 6. Transaction Lifecycle Design
-
-The system supports the following stage order:
-
-- `agreement`
-- `earnest_money`
-- `title_deed`
-- `completed`
-
-This order is strict.
-
-## Allowed transitions
-
-- `agreement -> earnest_money`
-- `earnest_money -> title_deed`
-- `title_deed -> completed`
-
-## Rejected transitions
-
-- same-stage transitions
-- skipped stages such as `agreement -> completed`
-- reverse transitions
-- any transition after `completed`
-
-### Why strict transitions were chosen
-
-Strict transition control was chosen for the following reasons:
-
-1. **Business integrity**  
-   Transaction state should reflect a real-world process.
-
-2. **Predictable backend behavior**  
-   Commission logic and historical tracking depend on a stable lifecycle.
-
-3. **Cleaner frontend assumptions**  
-   The UI can rely on a known order of stages.
-
-4. **Reduced accidental misuse**  
-   Invalid transitions are explicitly blocked instead of silently accepted.
-
-The decision to reject invalid transitions was intentional and is one of the main rule-enforcement parts of the backend.
-
----
-
-# 7. Commission Calculation Design
-
-Commission logic is isolated in `CommissionService`.
-
-## Business rules implemented
-
-- 50% of the service fee belongs to the agency
-- The remaining 50% is the agent pool
-
-### Scenario A: Same listing and selling agent
-
-If `listingAgentId` and `sellingAgentId` are the same:
-
-- agency gets 50%
-- listing agent gets 50%
-- selling agent amount is stored as `0`
-
-### Scenario B: Different listing and selling agents
-
-If the agents are different:
-
-- agency gets 50%
-- listing agent gets 25%
-- selling agent gets 25%
-
-## Why CommissionService is separate
-
-Commission calculation was moved into its own service because it is:
-
-- an isolated business rule
-- easy to unit test independently
-- likely to evolve in real-world scenarios
-- easier to read when separated from transaction orchestration
-
-This separation keeps `TransactionsService` focused on process flow rather than formula details.
-
-## Calculation timing
-
-The financial breakdown is calculated when a transaction reaches `completed`.
-
-### Why calculate on completion
-
-This was chosen because:
-
-1. the transaction is considered finalized at that stage
-2. commission should represent a final snapshot
-3. storing it earlier would imply that the transaction is already settled
-
-As a result, `breakdown` remains `null` until the transaction reaches `completed`.
-
----
-
-# 8. Service Layer Responsibilities
-
-The current backend uses explicit service separation.
-
-## 8.1 AgentsService
-
-Responsible for:
-
-- agent creation
-- duplicate email handling
-- active agent listing
-- fetching agent by ID
-- validating agent existence
-
-## 8.2 TransactionsService
-
-Responsible for:
-
-- transaction creation
-- transaction retrieval
-- stage updates
-- history appending
-- invoking commission calculation when appropriate
-- coordinating transaction-related use cases
-
-## 8.3 CommissionService
-
-Responsible only for:
-
-- commission math
-- payout allocation
-- financial reasoning strings
-- final breakdown object creation
-
-## 8.4 StageTransitionService
-
-Responsible only for:
-
-- checking allowed transitions
-- creating stage history entries
-
-### Why this separation matters
-
-This service split improves:
-
-- readability
-- testability
-- maintainability
-- clarity of responsibility
-
-It also makes interviews and reviews easier because the business rules are easy to locate and explain.
-
----
-
-# 9. Why Business Rules Are in Services, Not Schemas
-
-Schemas define:
-
-- field names
 - field types
-- required values
-- enums
-- persistence structure
+- required fields
+- enum values
+- indexes
+- references
 
-Services define:
+Services define behavior:
 
-- what the system is allowed to do
-- how transitions happen
-- how money is distributed
-- when breakdown is calculated
-- when errors are raised
+- whether an action is allowed
+- how stage transitions work
+- when a breakdown is calculated
+- how commission is distributed
+- what exceptions should be raised
 
-This separation was intentional.
+Keeping business rules in services makes the important logic easier to unit test and easier to reason about. It also avoids mixing domain behavior with persistence definitions.
 
-## Why not put rules in schemas
+## Transaction Lifecycle Design
 
-If commission and transition rules were mixed into schemas:
+Transactions always start in:
 
-- logic would be harder to test
-- domain behavior would be spread across persistence definitions
-- the code would be harder to read and maintain
+```text
+agreement
+```
 
-For this reason:
+The create endpoint does not accept an initial stage. This prevents callers from bypassing the lifecycle by creating a transaction directly as `completed`.
 
-- schemas stay structural
-- services stay behavioral
+Allowed transitions:
 
-This is the clearest design for the current project.
+```text
+agreement -> earnest_money
+earnest_money -> title_deed
+title_deed -> completed
+```
 
----
+Rejected transitions include:
 
-# 10. Validation and Error Handling Strategy
+- skipped stages
+- reverse transitions
+- same-stage transitions
+- transitions from `completed`
 
-The backend uses validation at multiple layers.
+`StageTransitionService` owns this validation so the rules are isolated and directly testable.
 
-## 10.1 Request DTO validation
+## Transaction Processing Flow
 
-DTOs validate incoming request payloads using `class-validator`.
+The transaction flow is designed as a small orchestration around explicit domain services.
+
+1. Client sends a request to create a transaction.
+2. `TransactionsService` validates listing and selling agent existence.
+3. Transaction is created with initial stage `agreement`.
+4. Initial `stageHistory` entry (`null -> agreement`) is stored.
+5. Client sends a stage update request.
+6. `StageTransitionService` validates the requested lifecycle transition.
+7. A new `stageHistory` item is appended.
+8. If the new stage is `completed`, `CommissionService` calculates the financial breakdown.
+9. Transaction document is updated and persisted.
+10. Updated transaction is returned to the client.
+
+## Idempotency Considerations
+
+Stage transitions are designed to be idempotent at the business level.
+
+If a transaction is already in the `completed` stage:
+
+- further transitions are rejected
+- commission calculation is not re-triggered
+- the stored financial breakdown remains unchanged
+
+This protects financial consistency and prevents duplicate payout logic execution.
+
+## Commission Calculation Design
+
+`CommissionService` owns commission calculation.
+
+Implemented rules:
+
+- agency receives 50% of the total service fee
+- agent pool is the remaining 50%
+- same listing and selling agent receives the full agent pool
+- different listing and selling agents split the agent pool equally
+
+Same-agent case:
+
+```text
+agencyAmount = 50%
+listingAgentAmount = 50%
+sellingAgentAmount = 0
+```
+
+The same-agent payout is stored once under `listingAgentAmount` to avoid visually duplicating a payout for the same person.
+
+Different-agent case:
+
+```text
+agencyAmount = 50%
+listingAgentAmount = 25%
+sellingAgentAmount = 25%
+```
+
+The service rounds monetary values to two decimal places and includes reason strings explaining the payout decision.
+
+The breakdown is calculated when a transaction transitions to `completed`. This makes the stored breakdown a final transaction snapshot.
+
+`CommissionService` also rejects negative service fees with `BadRequestException`.
+
+## Monetary Precision Handling
+
+Financial calculations are rounded to two decimal places to reflect currency precision.
+
+This prevents floating-point drift and ensures that:
+
+- totals remain predictable
+- frontend displays stable monetary values
+- stored breakdown values match expected accounting precision
+
+## Validation and Error-Handling Approach
+
+Validation happens at multiple levels.
+
+### Request Validation
+
+DTOs use `class-validator` and `class-transformer` for request payload validation and transformation.
 
 Examples:
 
-- required fields
-- string fields
-- numeric values
-- enum values
-- ObjectId format in DTOs
+- required string fields
+- email format
+- MongoDB ObjectId format
+- numeric service fee transformation
+- currency length and uppercase validation
+- transaction stage enum validation
 
-## 10.2 Global validation pipe
+### Global Validation Pipe
 
-A global `ValidationPipe` is configured in `main.ts` with:
+The global validation pipe is configured with:
 
 - `whitelist: true`
 - `forbidNonWhitelisted: true`
 - `transform: true`
 
-This ensures:
+Validation errors are returned as a structured `BadRequestException` payload with field-level messages.
 
-- extra properties are rejected
-- payloads are transformed correctly
-- request contracts stay strict
+### Environment Validation
 
-## 10.3 Environment validation
+Environment variables are validated during application startup.
 
-Environment variables are validated before the app starts.
+Validation covers:
 
-This prevents configuration problems such as:
+- `NODE_ENV`
+- `PORT`
+- optional `API_PREFIX`
+- optional `FRONTEND_ORIGIN`
+- `MONGODB_URI`
+- `MONGODB_DATABASE`
 
-- invalid `PORT`
-- invalid `NODE_ENV`
-- missing production `MONGODB_URI`
+In production, `MONGODB_URI` is required.
 
-## 10.4 Runtime business validation
+### Runtime Business Errors
 
-Business validations happen in services.
-
-Examples:
+Implemented runtime error behavior:
 
 - invalid ObjectId -> `BadRequestException`
-- agent not found -> `NotFoundException`
-- duplicate email -> `ConflictException`
+- missing agent or transaction -> `NotFoundException`
+- duplicate agent email -> `ConflictException`
 - invalid stage transition -> `BadRequestException`
-- negative service fee -> `BadRequestException`
+- negative service fee in `CommissionService` -> `BadRequestException`
 
-### Why this approach was chosen
+## Failure Handling Strategy
 
-This layered validation strategy keeps errors closer to their source:
+The backend follows a fail-fast strategy to prevent invalid state transitions and inconsistent financial data.
 
-- input shape issues -> DTO validation
-- system configuration issues -> env validation
-- domain rule issues -> service exceptions
+- Invalid ObjectIds are rejected before database queries.
+- Missing agents block transaction creation.
+- Invalid stage transitions are rejected before persistence.
+- Negative service fees are rejected before commission calculation.
 
-This is easier to debug and easier to document.
+This protects data integrity and ensures financial correctness.
 
----
+## Testing Strategy
 
-# 11. Query and Retrieval Decisions
+Testing currently focuses on the service layer because this is where the business rules live.
 
-## 11.1 Active-only agent listing
-
-`getAllAgents()` returns only agents with `isActive: true`.
-
-### Why
-
-Inactive agents should not normally appear in selection flows for new transactions.
-
-This makes the API more aligned with expected usage.
-
----
-
-## 11.2 Populated transaction retrieval
-
-Transaction queries populate:
-
-- `listingAgentId` with `fullName` and `email`
-- `sellingAgentId` with `fullName` and `email`
-
-### Why
-
-This avoids forcing the frontend to make extra lookups just to display names and emails.
-
-The backend keeps the database normalized while still returning frontend-friendly responses.
-
----
-
-# 12. Testing Strategy
-
-Testing focuses on the service layer, because that is where the important business logic lives.
-
-## Tested services
+Implemented unit test files:
 
 - `agents.service.spec.ts`
 - `commission.service.spec.ts`
 - `stage-transition.service.spec.ts`
 - `transactions.service.spec.ts`
 
-## What is covered
+Covered behavior includes:
 
-### AgentsService
-- create success
+- agent creation
 - duplicate email handling
-- unknown error propagation
-- active-only listing
-- invalid ID handling
-- not found handling
-- validateAgentExists behavior
-
-### CommissionService
-- same-agent commission distribution
-- different-agent distribution
-- fractional values
-- zero values
-- very small values
-- large values
-- negative fee rejection
-
-### StageTransitionService
-- valid transitions
-- invalid transitions
-- same-stage rejection
-- history item generation
-
-### TransactionsService
+- unknown database error pass-through
+- active-only agent listing
+- invalid id handling
+- missing resource handling
 - transaction creation
-- agent validation before creation
-- default stage assignment
+- agent validation before transaction creation
+- default `agreement` stage
 - stage history creation
+- valid and invalid stage transitions
+- commission calculation rules
+- decimal and edge-case commission values
 - completed-stage breakdown calculation
-- non-final stage updates
-- invalid transition rejection
-- populated transaction retrieval
+- populated transaction reads
 - breakdown retrieval
-- invalid ID handling
-- not found handling
 
-## Why the testing scope is service-focused
+Tests instantiate services directly with mocked dependencies where practical. This keeps unit tests fast and focused on business behavior.
 
-Coverage was intentionally narrowed to service files only.
+## Coverage Scope Rationale
 
-### Included in coverage
+Coverage is intentionally scoped to service files:
 
-- `src/agents/**/*.service.ts`
-- `src/transactions/**/*.service.ts`
+```text
+src/agents/**/*.service.ts
+src/transactions/**/*.service.ts
+```
 
-### Excluded from coverage emphasis
+This is configured in the Jest `collectCoverageFrom` setting.
 
-- controllers
-- DTOs
-- modules
-- schemas
-- bootstrap / config files
+The goal is to measure coverage for the domain logic that matters most in this case:
 
-### Why
+- agent rules
+- transaction orchestration
+- stage transition rules
+- commission calculation
 
-Controllers and DTOs are important, but the highest-value correctness in this project comes from business rules, transitions, and calculations.  
-Service-level coverage is therefore the most meaningful signal for this case.
+Controllers, DTOs, modules, schemas, enums, bootstrap files, config files, and database setup files are intentionally excluded from the coverage metric. They are still part of the application, but they are not the primary source of business-rule complexity.
 
-## Current result
-
-Business-logic service coverage is currently approximately:
+Current business-logic coverage is approximately:
 
 - Statements: 100%
 - Lines: 100%
 - Functions: 100%
 - Branches: about 88.88%
 
-This is considered strong coverage for the current backend scope.
+## Trade-Offs / Future Improvements
 
----
+Current trade-offs:
 
-# 13. Trade-offs and Non-Goals
+- No authentication or authorization has been implemented.
+- No pagination, filtering, or search has been implemented.
+- No Swagger / OpenAPI documentation has been implemented.
+- No Docker configuration has been added.
+- No CI/CD configuration has been added.
+- No seed scripts have been added.
+- Integration and e2e tests are not the current focus.
 
-Some choices were intentionally simplified for this phase.
+Future backend improvements may include:
 
-## Trade-offs
-
-### 1. No authentication / authorization yet
-Not required by the case at this stage, so it was intentionally deferred.
-
-### 2. No pagination / filtering yet
-The API currently focuses on core correctness rather than list scalability features.
-
-### 3. No Swagger / OpenAPI yet
-The project currently relies on README and DESIGN.md documentation instead.
-
-### 4. No integration or e2e tests yet
-Unit tests were prioritized first because the main risk in the case is business-rule correctness.
-
-### 5. No deployment configuration yet
-This phase focuses on local backend correctness and architecture before deployment polishing.
-
-These are conscious scope decisions, not omissions caused by uncertainty.
-
----
-
-# 14. Pending Frontend Work
-
-Frontend work has not yet been implemented.
-
-Planned frontend responsibilities include:
-
-- listing transactions
-- showing transaction details
-- showing populated agent information
-- updating stages
-- displaying commission breakdown
-- managing agents
-
-The intended frontend stack is:
-
-- Nuxt 3
-- Pinia
-- TailwindCSS
-
-Frontend-specific design decisions will be documented after implementation so that the document reflects actual code rather than assumptions.
-
----
-
-# 15. Future Improvements
-
-Possible next improvements include:
-
-- frontend implementation
-- deployment configuration
-- API documentation generation
-- integration tests
-- e2e tests
-- pagination and filtering
+- integration tests for controller and database behavior
+- e2e tests for the API lifecycle
+- pagination and filtering if list size becomes important
+- generated API documentation
 - structured logging
-- role-based access control
-- audit-friendly metadata expansion
+- deployment configuration
 
-These were not prioritized in the first backend phase because the case is primarily evaluated on design quality and rule correctness.
+These are intentionally not described as implemented.
 
----
+## Pending Frontend Work
 
-# 16. Conclusion
+Frontend implementation is pending.
 
-The backend was designed around the core domain concerns of the case:
+The planned frontend phase will likely consume the existing backend endpoints for:
 
-- lifecycle integrity
-- commission correctness
-- traceability
-- maintainability
-- testability
+- listing agents
+- creating transactions
+- listing transactions
+- viewing transaction details
+- updating transaction stages
+- displaying financial breakdowns
 
-The most important decisions were:
+Frontend pages, components, composables, and state management decisions will be documented after they are implemented.
 
-- using transaction as the aggregate root
-- storing agent records separately
-- embedding financial breakdown inside transactions
-- recording stage history
-- separating commission logic and stage-transition logic into dedicated services
-- concentrating automated tests on service-layer business rules
+## Deployment Note
 
-This results in a backend that is simple enough for the current case scope, while still being structured in a way that can be extended in the next phase.
+Deployment has not been completed yet.
+
+There is currently no live API URL and no live frontend URL. The backend is documented for local development and testing at this stage.

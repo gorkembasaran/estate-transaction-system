@@ -1,44 +1,32 @@
-# Estate Transaction & Commission Management System
+# Estate Transaction Backend
 
-This project is a backend-first implementation of an estate transaction and commission management system developed as part of a technical case study.
+Backend service for an estate transaction and commission management technical case.
 
-The system manages real estate transactions between agents, enforces stage transitions, and automatically calculates financial commissions when a transaction is completed.
+The backend manages agents, tracks transaction lifecycle stages, validates allowed transitions, and calculates commission breakdowns when a transaction is completed. It is implemented with NestJS, MongoDB, Mongoose, TypeScript, and Jest.
 
-At the current stage, the backend is fully implemented and tested. The frontend implementation is planned as the next phase.
+This README is scoped to the backend only. Frontend implementation is pending and is not documented as completed here.
 
----
+## Current Implementation Status
 
-# Project Overview
+Backend:
 
-The goal of this system is to manage real estate transactions between agents while ensuring:
+- Implemented for the current case scope
+- Unit tested at the service layer
+- Business rules validated with Jest
+- Coverage focused on business-logic service files
+- MongoDB integration configured through Mongoose
 
-- Correct transaction lifecycle progression
-- Controlled stage transitions
-- Automatic commission distribution
-- Transparent financial breakdown tracking
-- Historical tracking of transaction stages
+Frontend:
 
-The system enforces strict business rules and records all transitions and financial changes for auditability.
+- Pending
+- Will be documented separately after implementation
 
----
+Deployment:
 
-# Current Implementation Status
+- Not completed yet
+- No live backend URL is currently documented
 
-## Backend
-✔ Implemented  
-✔ Fully unit tested  
-✔ Business logic validated  
-✔ Coverage focused on service layer  
-
-## Frontend
-⏳ Pending  
-Planned as the next phase of development.
-
----
-
-# Tech Stack
-
-## Backend
+## Tech Stack
 
 - Node.js
 - TypeScript
@@ -47,377 +35,453 @@ Planned as the next phase of development.
 - Mongoose
 - Jest
 
-## Testing
+## Runtime Requirements
 
-- Jest
-- Unit testing at service level
-- Business logic coverage prioritized
+- Node.js
+- npm
+- MongoDB local instance or MongoDB Atlas connection string
 
----
+## API Base URL
 
-# API Base URL
+Default local base URL:
 
-Default:
-
+```text
 http://localhost:3000
+```
 
----
+If `API_PREFIX=api` is configured, the API base becomes:
 
-# Transaction Stages
+```text
+http://localhost:3000/api
+```
 
-The system supports the following stages:
+## Implemented Backend Features
 
-- agreement
-- earnest_money
-- title_deed
-- completed
+### Agents Module
 
----
+The agents module handles agent-related operations.
 
-# Implemented Backend Features
+Implemented behavior:
 
-## Agents Module
-
-Handles agent management.
-
-Implemented features:
-
-- Create new agent
-- Prevent duplicate emails
-- Retrieve agent by ID
+- Create an agent
+- Prevent duplicate agent emails
 - Retrieve active agents
-- Validate agent existence
-- Sort agents by newest first
+- Sort active agents by newest first
+- Retrieve agent by id
+- Validate agent existence for transaction creation
+- Reject invalid ObjectId values
 
-Business rules:
+### Transactions Module
 
-- Agent emails must be unique
-- Only active agents are returned in list queries
-- Invalid ObjectId inputs are rejected
+The transactions module handles transaction lifecycle and financial processing.
 
----
+Implemented behavior:
 
-## Transactions Module
-
-Handles transaction lifecycle and financial processing.
-
-Implemented features:
-
-- Create new transaction
-- Automatically start at `agreement`
+- Create a transaction
+- Always start new transactions at `agreement`
+- Validate listing and selling agents before creation
+- Retrieve transactions
+- Populate `listingAgentId` and `sellingAgentId` with `fullName` and `email`
+- Retrieve a transaction by id with populated agent fields
 - Update transaction stage
 - Validate stage transitions
 - Store stage history
-- Populate agent references
-- Calculate financial breakdown
-- Retrieve transactions
-- Retrieve breakdown information
+- Calculate financial breakdown when the transaction reaches `completed`
+- Retrieve stored transaction breakdown
 
----
+## Transaction Stages
 
-## Commission Calculation
+Supported stages:
 
-Commission distribution is handled by:
-
-`CommissionService`
-
-Rules:
-
-- 50% → Agency
-- 50% → Agent pool
-- Same agent (listing + selling):
-  - Receives full agent portion
-- Different agents:
-  - Split agent portion equally
-
-Breakdown includes:
-
-- agencyAmount
-- listingAgentAmount
-- sellingAgentAmount
-- listingAgentReason
-- sellingAgentReason
-- calculatedAt
-
----
-
-## Stage Transition System
-
-Managed by:
-
-`StageTransitionService`
+```text
+agreement
+earnest_money
+title_deed
+completed
+```
 
 Allowed transitions:
 
-agreement → earnest_money  
-earnest_money → title_deed  
-title_deed → completed  
-completed → (no further transitions)
+```text
+agreement -> earnest_money
+earnest_money -> title_deed
+title_deed -> completed
+```
 
-Invalid transitions:
+### Initial Stage Rule
 
-- Skipped stages
-- Reverse transitions
-- Same-stage transitions
+All transactions are automatically created in the `agreement` stage. The create endpoint does not allow setting an initial stage manually. This prevents bypassing lifecycle validation by creating transactions directly in later stages.
 
-All transitions are recorded in:
+Rejected transitions:
 
-`stageHistory`
+- skipped stages
+- reverse transitions
+- same-stage transitions
+- transitions after `completed`
 
----
+## CommissionService
 
-# Data Model Overview
+Commission distribution is handled by `CommissionService`.
 
-## Agent
+Implemented rules:
 
-Stored as a separate collection.
+- 50% of the total service fee goes to the agency
+- 50% of the total service fee becomes the agent pool
+- If listing agent and selling agent are the same person, that agent receives the full agent pool
+- If listing agent and selling agent are different, the agent pool is split equally
+- Negative service fees are rejected with `BadRequestException`
+- Monetary values are rounded to two decimal places
+
+Financial breakdown fields:
+
+- `agencyAmount`
+- `listingAgentAmount`
+- `sellingAgentAmount`
+- `listingAgentReason`
+- `sellingAgentReason`
+- `calculatedAt`
+
+The breakdown is embedded in the transaction document and remains `null` until the transaction reaches `completed`.
+
+## StageTransitionService
+
+Stage transition validation is handled by `StageTransitionService`.
+
+Responsibilities:
+
+- enforce allowed transaction transitions
+- reject invalid lifecycle changes
+- create stage history entries
+
+Each transaction stores `stageHistory`, including the initial entry:
+
+```text
+fromStage: null
+toStage: agreement
+```
+
+### Idempotency Considerations
+
+Once a transaction reaches the `completed` stage, further transitions are rejected. Commission calculation is not executed again after completion. This prevents duplicate financial calculations and protects data consistency.
+
+## Transaction Processing Flow
+
+High-level transaction request lifecycle:
+
+1. Client sends a request to create a transaction.
+2. `TransactionsService` validates that listing and selling agents exist.
+3. Transaction is created with initial stage `agreement`.
+4. Initial `stageHistory` entry is stored (`null -> agreement`).
+5. Client requests a stage update.
+6. `StageTransitionService` validates the requested transition.
+7. A new `stageHistory` item is appended.
+8. If the stage becomes `completed`, `CommissionService` calculates the financial breakdown.
+9. The updated transaction document is saved.
+10. The updated transaction is returned to the client.
+
+## Data Model Overview
+
+### Agent
+
+Stored in the `agents` collection.
 
 Fields:
 
-- fullName
-- email
-- isActive
-- createdAt
-- updatedAt
+- `fullName`
+- `email`
+- `isActive`
+- `createdAt`
+- `updatedAt`
 
----
+The `email` field has a unique index.
 
-## Transaction
+### Transaction
 
-Stores the core business record.
-
-Fields:
-
-- propertyTitle
-- totalServiceFee
-- currency
-- listingAgentId
-- sellingAgentId
-- stage
-- stageHistory
-- breakdown
-- createdAt
-- updatedAt
-
----
-
-## Stage History
-
-Stored inside transaction.
+Stored in the `transactions` collection.
 
 Fields:
 
-- fromStage
-- toStage
-- changedAt
+- `propertyTitle`
+- `totalServiceFee`
+- `currency`
+- `listingAgentId`
+- `sellingAgentId`
+- `stage`
+- `stageHistory`
+- `breakdown`
+- `createdAt`
+- `updatedAt`
 
-Used for:
+`listingAgentId` and `sellingAgentId` are MongoDB ObjectId references to agents.
 
-- auditability
-- tracking transaction lifecycle
+### Stage History
 
----
-
-## Financial Breakdown
-
-Stored inside transaction.
+Embedded inside the transaction document.
 
 Fields:
 
-- agencyAmount
-- listingAgentAmount
-- sellingAgentAmount
-- listingAgentReason
-- sellingAgentReason
-- calculatedAt
+- `fromStage`
+- `toStage`
+- `changedAt`
 
-Stored only after:
+### Financial Breakdown
 
-`completed` stage
+Embedded inside the transaction document.
 
----
+Fields:
 
-# Project Structure
+- `agencyAmount`
+- `listingAgentAmount`
+- `sellingAgentAmount`
+- `listingAgentReason`
+- `sellingAgentReason`
+- `calculatedAt`
 
-project-root/
-│
-├── .env  
-├── src/
-│   ├── agents/
-│   │   ├── agents.controller.ts
-│   │   ├── agents.service.ts
-│   │   ├── dto/
-│   │   └── schemas/
-│   │
-│   ├── transactions/
-│   │   ├── transactions.controller.ts
-│   │   ├── transactions.service.ts
-│   │   ├── commission.service.ts
-│   │   ├── stage-transition.service.ts
-│   │   ├── dto/
-│   │   ├── enums/
-│   │   └── schemas/
-│   │
-│   ├── database/
-│   ├── config/
-│   ├── main.ts
-│   └── app.module.ts
+## Database Index Considerations
 
----
+Indexes are used to support lookup performance and data integrity.
 
-# Database
+- MongoDB-managed `_id` indexes support lookup by id.
+- A unique index exists on the `email` field in the `Agent` collection.
+- Transaction lookups rely on `_id` and referenced agent fields.
+- Additional indexes can be added later if query patterns grow.
 
-This project uses MongoDB.
+## Project Structure
 
-You can use:
+```text
+api/
+|-- .env.example
+|-- package.json
+|-- src/
+|   |-- agents/
+|   |   |-- agents.controller.ts
+|   |   |-- agents.module.ts
+|   |   |-- agents.service.ts
+|   |   |-- agents.service.spec.ts
+|   |   |-- dto/
+|   |   `-- schemas/
+|   |-- transactions/
+|   |   |-- commission.service.ts
+|   |   |-- commission.service.spec.ts
+|   |   |-- stage-transition.service.ts
+|   |   |-- stage-transition.service.spec.ts
+|   |   |-- transactions.controller.ts
+|   |   |-- transactions.module.ts
+|   |   |-- transactions.service.ts
+|   |   |-- transactions.service.spec.ts
+|   |   |-- dto/
+|   |   |-- enums/
+|   |   `-- schemas/
+|   |-- config/
+|   |-- database/
+|   |-- app.module.ts
+|   `-- main.ts
+`-- test/
+```
 
-- Local MongoDB
+## Database
+
+The backend uses MongoDB through Mongoose.
+
+Supported development options:
+
+- local MongoDB
 - MongoDB Atlas
 
-Default local example:
+Default local URI:
 
-mongodb://localhost:27017/estate-db
+```text
+mongodb://127.0.0.1:27017
+```
 
----
+Default database name:
 
-# Environment Variables
+```text
+estate_transaction_system
+```
 
-Create a `.env` file:
+## Environment Variables
 
-MONGO_URI=mongodb://localhost:27017/estate-db  
+Create an `.env` file in the `api/` directory. You can start from `.env.example`.
+
+```env
+NODE_ENV=development
 PORT=3000
+FRONTEND_ORIGIN=http://localhost:3001
+API_PREFIX=
+MONGODB_URI=mongodb://127.0.0.1:27017
+MONGODB_DATABASE=estate_transaction_system
+```
 
----
+Notes:
 
-# Installation
+- `NODE_ENV` must be `development`, `test`, or `production`
+- `PORT` must be a valid TCP port
+- `FRONTEND_ORIGIN` is used for CORS configuration
+- `API_PREFIX` is optional
+- `MONGODB_URI` is required in production
+- `MONGODB_DATABASE` defaults to `estate_transaction_system`
+- Secrets should not be committed to the repository
 
-Install dependencies:
+## Installation
 
+From the repository root:
+
+```bash
+cd api
 npm install
+cp .env.example .env
+```
 
----
+Make sure MongoDB is available locally or configure `MONGODB_URI` for Atlas.
 
-# Running the Backend
+## Running the Backend
 
 Development mode:
 
+```bash
 npm run start:dev
+```
 
 Production build:
 
-npm run build  
+```bash
+npm run build
 npm run start:prod
+```
 
-Default server:
+## Running Tests
 
-http://localhost:3000
+Run all unit tests:
 
----
-
-# Running Tests
-
-Run all tests:
-
+```bash
 npm run test
+```
 
 Watch mode:
 
+```bash
 npm run test:watch
+```
 
 Run coverage:
 
+```bash
 npm run test:cov
+```
 
----
+Coverage can also be run with:
 
-# Test Coverage Strategy
+```bash
+npm run test -- --coverage
+```
 
-Coverage is intentionally focused on:
+## Test Coverage Strategy
 
-- Business logic services
+Coverage is intentionally focused on business-logic service files.
 
-Included:
+Included coverage paths:
 
-agents/**/*.service.ts  
-transactions/**/*.service.ts  
+```text
+agents/**/*.service.ts
+transactions/**/*.service.ts
+```
 
-Reason:
+These paths are relative to Jest `rootDir`, which is configured as `src`.
 
-Service layer contains the core business logic and rule enforcement.
+The service layer contains the most important business behavior:
 
-Controllers and DTOs are intentionally excluded since they mainly handle routing and validation, not business rules.
+- agent validation and duplicate email handling
+- transaction orchestration
+- stage transition validation
+- commission calculation
 
----
+Controllers, DTOs, modules, schemas, enums, bootstrap files, config files, and database setup files are intentionally excluded from the coverage metric.
 
-# API Overview
+Current business-logic coverage is approximately:
 
-## Agents
+- Statements: 100%
+- Lines: 100%
+- Functions: 100%
+- Branches: about 88.88%
 
-POST /agents  
-GET /agents  
-GET /agents/:id  
+## API Overview
 
-## Transactions
+Routes are unprefixed by default. If `API_PREFIX` is configured, place the prefix before each route.
 
-POST /transactions  
-GET /transactions  
-GET /transactions/:id  
-PATCH /transactions/:id/stage  
-GET /transactions/:id/breakdown  
+Agents:
 
----
+```text
+POST /agents
+GET /agents
+GET /agents/:id
+```
 
-# Error Handling
+Transactions:
 
-The system handles:
+```text
+POST /transactions
+GET /transactions
+GET /transactions/:id
+PATCH /transactions/:id/stage
+GET /transactions/:id/breakdown
+```
 
-- Invalid ObjectId → BadRequestException
-- Missing resources → NotFoundException
-- Duplicate email → ConflictException
-- Invalid stage transition → BadRequestException
-- Negative service fee → BadRequestException
+## Validation Strategy
 
----
+Request and runtime validation are handled separately.
 
-# Next Steps
+### Request Validation
 
-Planned frontend implementation:
+- DTOs validate request payload structure.
+- `class-validator` and `class-transformer` are used.
+- Invalid payloads return `BadRequestException`.
 
-- Transaction list page
-- Transaction detail page
-- Stage update UI
-- Financial breakdown display
-- Agent management UI
+### Runtime Validation
 
-Frontend stack (planned):
+- ObjectId format validation before database lookup.
+- Agent existence validation before transaction creation.
+- Stage transition validation before state update.
+- Negative service fee validation before commission calculation.
 
-- Nuxt 3
-- Pinia
-- TailwindCSS
+## Failure Handling Strategy
 
----
+The backend follows a fail-fast approach to protect data integrity.
 
-# Design Documentation
+- Invalid ObjectIds are rejected before database lookup.
+- Missing agents block transaction creation.
+- Invalid stage transitions are rejected before persistence.
+- Negative service fees are rejected before commission calculation.
 
-Detailed architectural decisions are documented in:
+This prevents inconsistent transaction states and protects financial correctness.
 
-DESIGN.md
+## Error Handling
 
-This includes:
+Implemented error behavior:
 
-- Data modeling decisions
-- Service responsibilities
-- Transaction lifecycle design
-- Commission calculation logic
-- Testing strategy
+- invalid ObjectId -> `BadRequestException`
+- missing agent or transaction -> `NotFoundException`
+- duplicate agent email -> `ConflictException`
+- invalid stage transition -> `BadRequestException`
+- negative service fee -> `BadRequestException`
+- invalid request payload -> `BadRequestException`
 
----
+## Backend Future Work
 
-# Notes
+Potential backend improvements:
 
-This implementation prioritizes:
+- integration tests for controllers and database behavior
+- e2e tests for the main API lifecycle
+- generated API documentation if needed
+- deployment configuration
+- structured logging
+- pagination and filtering if list requirements grow
+- authentication and authorization if the product scope requires it
 
-- Data consistency
-- Business rule correctness
-- Maintainability
-- Testability
+Frontend implementation is pending and is intentionally not described as completed in this backend README.
+
+## Documentation Map
+
+- `api/README.md`: backend setup, commands, endpoints, and current backend status
+- `../README.md`: project-level overview
+- `../DESIGN.md`: architecture decisions, data modeling rationale, lifecycle design, and testing strategy
