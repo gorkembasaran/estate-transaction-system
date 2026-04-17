@@ -131,6 +131,8 @@ Detailed coverage rationale is documented in `api/README.md` and `DESIGN.md`.
 
 ## API Overview
 
+The following endpoints represent the currently available backend API surface.
+
 Routes are unprefixed by default. If `API_PREFIX` is configured, the prefix is added before these routes.
 
 Agents:
