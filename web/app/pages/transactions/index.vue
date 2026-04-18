@@ -30,6 +30,8 @@ const searchQuery = ref('')
 const selectedStage = ref<TransactionStage | 'all'>('all')
 const dateFrom = ref('')
 const dateTo = ref('')
+const dateFromInput = ref<HTMLInputElement | null>(null)
+const dateToInput = ref<HTMLInputElement | null>(null)
 const currentPage = ref(1)
 const pageSize = 10
 
@@ -139,6 +141,20 @@ function formatDateFilterValue(value: string): string {
   return dateFilterFormatter.format(date)
 }
 
+function openDatePicker(input: HTMLInputElement | null): void {
+  if (!input) {
+    return
+  }
+
+  if (typeof input.showPicker === 'function') {
+    input.showPicker()
+    return
+  }
+
+  input.focus()
+  input.click()
+}
+
 onMounted(() => {
   void loadTransactions()
 })
@@ -226,12 +242,21 @@ function resetToFirstPageAndLoad(): void {
         </option>
       </select>
 
-      <label class="date-field">
+      <div
+        class="date-field"
+        role="button"
+        tabindex="0"
+        @click="openDatePicker(dateFromInput)"
+        @keydown.enter.prevent="openDatePicker(dateFromInput)"
+        @keydown.space.prevent="openDatePicker(dateFromInput)"
+      >
         <input
+          ref="dateFromInput"
           v-model="dateFrom"
           type="date"
           :max="dateTo || undefined"
           aria-label="Filter transactions from date"
+          tabindex="-1"
         >
         <span class="date-field-copy" aria-hidden="true">
           <span class="date-field-label">From</span>
@@ -248,14 +273,23 @@ function resetToFirstPageAndLoad(): void {
           <path d="M4.75 9.25h14.5" />
           <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
         </svg>
-      </label>
+      </div>
 
-      <label class="date-field">
+      <div
+        class="date-field"
+        role="button"
+        tabindex="0"
+        @click="openDatePicker(dateToInput)"
+        @keydown.enter.prevent="openDatePicker(dateToInput)"
+        @keydown.space.prevent="openDatePicker(dateToInput)"
+      >
         <input
+          ref="dateToInput"
           v-model="dateTo"
           type="date"
           :min="dateFrom || undefined"
           aria-label="Filter transactions to date"
+          tabindex="-1"
         >
         <span class="date-field-copy" aria-hidden="true">
           <span class="date-field-label">To</span>
@@ -272,7 +306,7 @@ function resetToFirstPageAndLoad(): void {
           <path d="M4.75 9.25h14.5" />
           <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
         </svg>
-      </label>
+      </div>
 
       <button
         v-if="hasActiveFilters"
