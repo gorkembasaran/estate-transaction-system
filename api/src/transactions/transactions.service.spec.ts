@@ -12,6 +12,7 @@ import { StageTransitionService } from './stage-transition.service';
 import { TransactionsService } from './transactions.service';
 
 type TransactionModelMock = {
+  countDocuments: jest.Mock;
   create: jest.Mock;
   find: jest.Mock;
   findById: jest.Mock;
@@ -55,6 +56,7 @@ describe('TransactionsService', () => {
 
   beforeEach(() => {
     transactionModel = {
+      countDocuments: jest.fn(),
       create: jest.fn(),
       find: jest.fn(),
       findById: jest.fn(),
@@ -263,14 +265,15 @@ describe('TransactionsService', () => {
     expect(transaction.stageHistory).toEqual([]);
   });
 
-  it('returns all transactions using populated agent fields and newest-first sorting', async () => {
+  it('returns paginated transactions using populated agent fields and newest-first sorting', async () => {
     const transactions = [{ _id: transactionId }];
     const query = createFindQuery(transactions);
     transactionModel.find.mockReturnValue(query);
+    transactionModel.countDocuments.mockReturnValue(createCountQuery(12));
 
-    const result = await service.getAllTransactions();
+    const result = await service.getAllTransactions({ page: 2, limit: 5 });
 
-    expect(transactionModel.find).toHaveBeenCalledWith();
+    expect(transactionModel.find).toHaveBeenCalledWith({});
     expect(query.populate).toHaveBeenCalledWith(
       'listingAgentId',
       'fullName email',
@@ -280,17 +283,63 @@ describe('TransactionsService', () => {
       'fullName email',
     );
     expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.skip).toHaveBeenCalledWith(5);
+    expect(query.limit).toHaveBeenCalledWith(5);
     expect(query.exec).toHaveBeenCalledTimes(1);
-    expect(result).toBe(transactions);
+    expect(transactionModel.countDocuments).toHaveBeenCalledWith({});
+    expect(result).toEqual({
+      items: transactions,
+      meta: {
+        hasNextPage: true,
+        hasPreviousPage: true,
+        limit: 5,
+        page: 2,
+        totalItems: 12,
+        totalPages: 3,
+      },
+    });
   });
 
   it('returns an empty transaction list when no transactions exist', async () => {
     const query = createFindQuery([]);
     transactionModel.find.mockReturnValue(query);
+    transactionModel.countDocuments.mockReturnValue(createCountQuery(0));
 
-    await expect(service.getAllTransactions()).resolves.toEqual([]);
+    await expect(service.getAllTransactions({})).resolves.toEqual({
+      items: [],
+      meta: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        limit: 10,
+        page: 1,
+        totalItems: 0,
+        totalPages: 0,
+      },
+    });
 
     expect(query.exec).toHaveBeenCalledTimes(1);
+  });
+
+  it('applies stage and search filters when listing transactions', async () => {
+    const query = createFindQuery([]);
+    transactionModel.find.mockReturnValue(query);
+    transactionModel.countDocuments.mockReturnValue(createCountQuery(0));
+
+    await service.getAllTransactions({
+      limit: 10,
+      page: 1,
+      search: 'villa',
+      stage: 'completed',
+    });
+
+    expect(transactionModel.find).toHaveBeenCalledWith({
+      $or: [{ propertyTitle: /villa/i }, { currency: /villa/i }],
+      stage: 'completed',
+    });
+    expect(transactionModel.countDocuments).toHaveBeenCalledWith({
+      $or: [{ propertyTitle: /villa/i }, { currency: /villa/i }],
+      stage: 'completed',
+    });
   });
 
   it('returns a transaction with populated agent fields', async () => {
@@ -377,8 +426,16 @@ describe('TransactionsService', () => {
 function createFindQuery(result: unknown) {
   return {
     exec: jest.fn().mockResolvedValue(result),
+    limit: jest.fn().mockReturnThis(),
     populate: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
+  };
+}
+
+function createCountQuery(result: number) {
+  return {
+    exec: jest.fn().mockResolvedValue(result),
   };
 }
 

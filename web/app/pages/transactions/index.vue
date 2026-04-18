@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import StageBadge from '~/components/transactions/StageBadge.vue'
 import { useTransactionsStore } from '~/stores/transactions'
-import type { Transaction, TransactionStage } from '~/types/transaction'
+import type { TransactionStage } from '~/types/transaction'
 import {
   formatAmountWithCurrency,
   formatDate,
   getAgentDisplayName,
-  getTransactionStageLabel,
 } from '~/utils/transaction-format'
 
 const stageOptions: Array<{ label: string; value: TransactionStage | 'all' }> = [
@@ -20,62 +19,96 @@ const stageOptions: Array<{ label: string; value: TransactionStage | 'all' }> = 
 ]
 
 const transactionsStore = useTransactionsStore()
-const { error, isLoading, items: transactions } = storeToRefs(transactionsStore)
+const {
+  error,
+  isLoading,
+  items: transactions,
+  pagination,
+} = storeToRefs(transactionsStore)
 
 const searchQuery = ref('')
 const selectedStage = ref<TransactionStage | 'all'>('all')
+const currentPage = ref(1)
+const pageSize = 8
 
-const filteredTransactions = computed(() => {
-  const normalizedQuery = searchQuery.value.trim().toLowerCase()
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
-  return transactions.value.filter((transaction) => {
-    const matchesStage =
-      selectedStage.value === 'all' || transaction.stage === selectedStage.value
+const resultSummary = computed(() => {
+  if (pagination.value.totalItems === 0) {
+    return 'Showing 0 of 0 transactions'
+  }
 
-    if (!matchesStage) {
-      return false
-    }
+  const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
+  const endItem = startItem + transactions.value.length - 1
 
-    if (!normalizedQuery) {
-      return true
-    }
-
-    return getSearchableTransactionText(transaction).includes(normalizedQuery)
-  })
+  return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
 })
-
-const resultSummary = computed(
-  () =>
-    `Showing ${filteredTransactions.value.length} of ${transactions.value.length} transaction${
-      transactions.value.length === 1 ? '' : 's'
-    }`,
-)
 const showSkeletonRows = computed(
   () => isLoading.value && transactions.value.length === 0,
 )
+const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
 
 async function loadTransactions(forceRefresh = false): Promise<void> {
-  await transactionsStore.fetchTransactions(forceRefresh).catch(() => undefined)
+  await transactionsStore
+    .fetchTransactions({
+      forceRefresh,
+      limit: pageSize,
+      page: currentPage.value,
+      search: searchQuery.value.trim() || undefined,
+      stage:
+        selectedStage.value === 'all' ? undefined : selectedStage.value,
+    })
+    .catch(() => undefined)
 }
 
 async function retryTransactions(): Promise<void> {
   await loadTransactions(true)
 }
 
-function getSearchableTransactionText(transaction: Transaction): string {
-  return [
-    transaction.propertyTitle,
-    getTransactionStageLabel(transaction.stage),
-    getAgentDisplayName(transaction.listingAgentId),
-    getAgentDisplayName(transaction.sellingAgentId),
-    transaction.currency,
-    String(transaction.totalServiceFee),
-  ]
-    .join(' ')
-    .toLowerCase()
+function resetToFirstPageAndLoad(): void {
+  if (currentPage.value === 1) {
+    void loadTransactions()
+    return
+  }
+
+  currentPage.value = 1
+}
+
+function goToPreviousPage(): void {
+  if (!pagination.value.hasPreviousPage || isLoading.value) {
+    return
+  }
+
+  currentPage.value -= 1
+}
+
+function goToNextPage(): void {
+  if (!pagination.value.hasNextPage || isLoading.value) {
+    return
+  }
+
+  currentPage.value += 1
 }
 
 onMounted(() => {
+  void loadTransactions()
+})
+
+watch(selectedStage, () => {
+  resetToFirstPageAndLoad()
+})
+
+watch(searchQuery, () => {
+  if (searchDebounce) {
+    clearTimeout(searchDebounce)
+  }
+
+  searchDebounce = setTimeout(() => {
+    resetToFirstPageAndLoad()
+  }, 300)
+})
+
+watch(currentPage, () => {
   void loadTransactions()
 })
 </script>
@@ -161,9 +194,9 @@ onMounted(() => {
             </tr>
           </tbody>
 
-          <tbody v-else-if="filteredTransactions.length > 0">
+          <tbody v-else-if="transactions.length > 0">
             <tr
-              v-for="transaction in filteredTransactions"
+              v-for="transaction in transactions"
               :key="transaction._id"
             >
               <td>
@@ -217,6 +250,28 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
+
+      <footer v-if="hasMultiplePages" class="pagination-bar">
+        <button
+          type="button"
+          :disabled="!pagination.hasPreviousPage || isLoading"
+          @click="goToPreviousPage"
+        >
+          Previous
+        </button>
+
+        <span>
+          Page {{ pagination.page }} of {{ pagination.totalPages }}
+        </span>
+
+        <button
+          type="button"
+          :disabled="!pagination.hasNextPage || isLoading"
+          @click="goToNextPage"
+        >
+          Next
+        </button>
+      </footer>
     </section>
   </section>
 </template>
@@ -500,6 +555,45 @@ onMounted(() => {
   color: #111827;
 }
 
+.pagination-bar {
+  align-items: center;
+  border-top: 1px solid #edf0f3;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  min-height: 68px;
+  padding: 0 32px;
+}
+
+.pagination-bar span {
+  color: #4b5563;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pagination-bar button {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #111827;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.pagination-bar button:hover:not(:disabled) {
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.pagination-bar button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @keyframes pulse {
   0%,
   100% {
@@ -539,6 +633,12 @@ onMounted(() => {
   .transactions-alert {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .pagination-bar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 18px 22px;
   }
 }
 </style>

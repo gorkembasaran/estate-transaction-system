@@ -2,6 +2,8 @@ import type { AxiosInstance } from 'axios'
 import type {
   CreateTransactionPayload,
   FinancialBreakdown,
+  GetTransactionsParams,
+  PaginatedTransactionsResponse,
   Transaction,
   UpdateTransactionStagePayload,
 } from '~/types/transaction'
@@ -10,8 +12,15 @@ function getApiClient(): AxiosInstance {
   return useNuxtApp().$api
 }
 
-export async function getTransactions(): Promise<Transaction[]> {
-  const { data } = await getApiClient().get<Transaction[]>('/transactions')
+export async function getTransactions(
+  params?: GetTransactionsParams,
+): Promise<PaginatedTransactionsResponse> {
+  const { data } = await getApiClient().get<PaginatedTransactionsResponse>(
+    '/transactions',
+    {
+      params,
+    },
+  )
 
   return data
 }

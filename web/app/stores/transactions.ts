@@ -9,6 +9,8 @@ import {
 import type {
   CreateTransactionPayload,
   FinancialBreakdown,
+  GetTransactionsParams,
+  PaginationMeta,
   Transaction,
   TransactionAgentReference,
   TransactionStage,
@@ -17,8 +19,11 @@ import type {
 import { getStoreErrorMessage } from '~/utils/store-error'
 
 const CACHE_TTL_MS = 60_000
+const DEFAULT_PAGE = 1
+const DEFAULT_LIMIT = 100
 
 let fetchTransactionsPromise: Promise<void> | null = null
+let fetchTransactionsKey: string | null = null
 
 interface TransactionsState {
   items: Transaction[]
@@ -27,7 +32,13 @@ interface TransactionsState {
   isLoading: boolean
   error: string | null
   lastFetchedAt: number | null
+  lastFetchKey: string | null
+  pagination: PaginationMeta
 }
+
+type FetchTransactionsOptions =
+  | (GetTransactionsParams & { forceRefresh?: boolean })
+  | boolean
 
 export const useTransactionsStore = defineStore('transactions', {
   state: (): TransactionsState => ({
@@ -37,31 +48,55 @@ export const useTransactionsStore = defineStore('transactions', {
     isLoading: false,
     error: null,
     lastFetchedAt: null,
+    lastFetchKey: null,
+    pagination: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      limit: DEFAULT_LIMIT,
+      page: DEFAULT_PAGE,
+      totalItems: 0,
+      totalPages: 0,
+    },
   }),
 
   actions: {
-    async fetchTransactions(forceRefresh = false): Promise<void> {
-      if (!forceRefresh && isCacheFresh(this.lastFetchedAt)) {
+    async fetchTransactions(
+      options: FetchTransactionsOptions = {},
+    ): Promise<void> {
+      const { forceRefresh, params } = normalizeFetchOptions(options)
+      const requestKey = createRequestKey(params)
+
+      if (
+        !forceRefresh &&
+        this.lastFetchKey === requestKey &&
+        isCacheFresh(this.lastFetchedAt)
+      ) {
         return
       }
 
-      if (fetchTransactionsPromise) {
+      if (fetchTransactionsPromise && fetchTransactionsKey === requestKey) {
         return fetchTransactionsPromise
       }
 
       this.isLoading = true
       this.error = null
+      fetchTransactionsKey = requestKey
 
       fetchTransactionsPromise = (async () => {
         try {
-          this.items = await getTransactions()
+          const response = await getTransactions(params)
+
+          this.items = response.items
+          this.pagination = response.meta
           this.lastFetchedAt = Date.now()
+          this.lastFetchKey = requestKey
         } catch (error) {
           this.error = getStoreErrorMessage(error)
           throw error
         } finally {
           this.isLoading = false
           fetchTransactionsPromise = null
+          fetchTransactionsKey = null
         }
       })()
 
@@ -95,6 +130,13 @@ export const useTransactionsStore = defineStore('transactions', {
         this.items = [transaction, ...this.items]
         this.selectedTransaction = transaction
         this.breakdown = transaction.breakdown
+        this.pagination = {
+          ...this.pagination,
+          totalItems: this.pagination.totalItems + 1,
+          totalPages: Math.ceil(
+            (this.pagination.totalItems + 1) / this.pagination.limit,
+          ),
+        }
 
         if (this.lastFetchedAt) {
           this.lastFetchedAt = Date.now()
@@ -177,6 +219,42 @@ export const useTransactionsStore = defineStore('transactions', {
 
 function isCacheFresh(lastFetchedAt: number | null): boolean {
   return lastFetchedAt !== null && Date.now() - lastFetchedAt < CACHE_TTL_MS
+}
+
+function normalizeFetchOptions(options: FetchTransactionsOptions): {
+  forceRefresh: boolean
+  params: GetTransactionsParams
+} {
+  if (typeof options === 'boolean') {
+    return {
+      forceRefresh: options,
+      params: {
+        limit: DEFAULT_LIMIT,
+        page: DEFAULT_PAGE,
+      },
+    }
+  }
+
+  const { forceRefresh = false, ...params } = options
+
+  return {
+    forceRefresh,
+    params: {
+      limit: params.limit ?? DEFAULT_LIMIT,
+      page: params.page ?? DEFAULT_PAGE,
+      search: params.search || undefined,
+      stage: params.stage,
+    },
+  }
+}
+
+function createRequestKey(params: GetTransactionsParams): string {
+  return JSON.stringify({
+    limit: params.limit ?? DEFAULT_LIMIT,
+    page: params.page ?? DEFAULT_PAGE,
+    search: params.search ?? '',
+    stage: params.stage ?? '',
+  })
 }
 
 function preservePopulatedAgentReferences(

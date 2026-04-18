@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
 import { UpdateTransactionStageDto } from './dto/update-transaction-stage.dto';
 import { TransactionsService } from './transactions.service';
 
@@ -13,8 +14,8 @@ export class TransactionsController {
   }
 
   @Get()
-  getAllTransactions() {
-    return this.transactionsService.getAllTransactions();
+  getAllTransactions(@Query() query: GetTransactionsQueryDto) {
+    return this.transactionsService.getAllTransactions(query);
   }
 
   @Get(':id')

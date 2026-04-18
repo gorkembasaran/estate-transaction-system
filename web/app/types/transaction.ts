@@ -52,3 +52,24 @@ export interface CreateTransactionPayload {
 export interface UpdateTransactionStagePayload {
   stage: TransactionStage
 }
+
+export interface GetTransactionsParams {
+  limit?: number
+  page?: number
+  search?: string
+  stage?: TransactionStage
+}
+
+export interface PaginationMeta {
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  limit: number
+  page: number
+  totalItems: number
+  totalPages: number
+}
+
+export interface PaginatedTransactionsResponse {
+  items: Transaction[]
+  meta: PaginationMeta
+}
