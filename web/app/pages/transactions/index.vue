@@ -34,6 +34,11 @@ const currentPage = ref(1)
 const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
+const dateFilterFormatter = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+})
 
 const normalizedSearchQuery = computed(() =>
   searchQuery.value.trim().toLowerCase(),
@@ -117,6 +122,21 @@ function clearFilters(): void {
   dateFrom.value = ''
   dateTo.value = ''
   resetToFirstPageAndLoad()
+}
+
+function formatDateFilterValue(value: string): string {
+  if (!value) {
+    return 'Select date'
+  }
+
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return dateFilterFormatter.format(date)
 }
 
 onMounted(() => {
@@ -207,21 +227,51 @@ function resetToFirstPageAndLoad(): void {
       </select>
 
       <label class="date-field">
-        <span>From</span>
         <input
           v-model="dateFrom"
           type="date"
+          :max="dateTo || undefined"
           aria-label="Filter transactions from date"
         >
+        <span class="date-field-copy" aria-hidden="true">
+          <span class="date-field-label">From</span>
+          <span
+            class="date-field-value"
+            :class="{ 'is-empty': !dateFrom }"
+          >
+            {{ formatDateFilterValue(dateFrom) }}
+          </span>
+        </span>
+        <svg class="date-field-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 3.75v3" />
+          <path d="M17 3.75v3" />
+          <path d="M4.75 9.25h14.5" />
+          <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
+        </svg>
       </label>
 
       <label class="date-field">
-        <span>To</span>
         <input
           v-model="dateTo"
           type="date"
+          :min="dateFrom || undefined"
           aria-label="Filter transactions to date"
         >
+        <span class="date-field-copy" aria-hidden="true">
+          <span class="date-field-label">To</span>
+          <span
+            class="date-field-value"
+            :class="{ 'is-empty': !dateTo }"
+          >
+            {{ formatDateFilterValue(dateTo) }}
+          </span>
+        </span>
+        <svg class="date-field-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 3.75v3" />
+          <path d="M17 3.75v3" />
+          <path d="M4.75 9.25h14.5" />
+          <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
+        </svg>
       </label>
 
       <button
@@ -520,28 +570,85 @@ function resetToFirstPageAndLoad(): void {
 
 .date-field {
   align-items: center;
+  background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   min-height: 50px;
-  padding: 0 14px;
+  padding: 0 14px 0 16px;
+  position: relative;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
-.date-field span {
-  color: #6b7280;
-  font-size: 14px;
-  font-weight: 800;
+.date-field:hover {
+  background: #f9fafb;
+  border-color: #b8c0cc;
 }
 
 .date-field input {
-  border: 0;
-  color: #111827;
+  appearance: none;
+  cursor: pointer;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+}
+
+.date-field input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.date-field-copy {
+  display: grid;
   flex: 1;
-  font: inherit;
-  font-size: 15px;
+  gap: 2px;
   min-width: 0;
-  outline: 0;
+  pointer-events: none;
+}
+
+.date-field-label {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.date-field-value {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.25;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-field-value.is-empty {
+  color: #9ca3af;
+  font-weight: 700;
+}
+
+.date-field-icon {
+  color: #4f46e5;
+  flex: 0 0 auto;
+  height: 20px;
+  pointer-events: none;
+  width: 20px;
+}
+
+.date-field-icon * {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .clear-filters-button {
