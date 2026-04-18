@@ -265,7 +265,7 @@ describe('TransactionsService', () => {
     expect(transaction.stageHistory).toEqual([]);
   });
 
-  it('returns paginated transactions using populated agent fields and newest-first sorting', async () => {
+  it('returns paginated transactions using populated agent fields and last-updated-first sorting', async () => {
     const transactions = [{ _id: transactionId }];
     const query = createFindQuery(transactions);
     transactionModel.find.mockReturnValue(query);
@@ -282,7 +282,7 @@ describe('TransactionsService', () => {
       'sellingAgentId',
       'fullName email',
     );
-    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.sort).toHaveBeenCalledWith({ updatedAt: -1 });
     expect(query.skip).toHaveBeenCalledWith(5);
     expect(query.limit).toHaveBeenCalledWith(5);
     expect(query.exec).toHaveBeenCalledTimes(1);

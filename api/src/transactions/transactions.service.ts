@@ -215,7 +215,7 @@ export class TransactionsService {
   private buildTransactionSort(
     query: GetTransactionsQueryDto,
   ): TransactionListSort {
-    const sortBy = query.sortBy ?? 'createdAt';
+    const sortBy = query.sortBy ?? 'updatedAt';
     const sortDirection = query.sortOrder === 'asc' ? 1 : -1;
 
     return {

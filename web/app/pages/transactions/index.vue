@@ -37,7 +37,7 @@ const dateTo = ref('')
 const dateFromInput = ref<HTMLInputElement | null>(null)
 const dateToInput = ref<HTMLInputElement | null>(null)
 const currentPage = ref(1)
-const sortBy = ref<TransactionSortBy>('createdAt')
+const sortBy = ref<TransactionSortBy>('updatedAt')
 const sortOrder = ref<TransactionSortOrder>('desc')
 const pageSize = 10
 
@@ -174,12 +174,14 @@ function toggleSort(nextSortBy: TransactionSortBy): void {
   resetToFirstPageAndLoad()
 }
 
-function getSortIcon(targetSortBy: TransactionSortBy): string {
+function getSortIndicatorState(
+  targetSortBy: TransactionSortBy,
+): 'neutral' | 'ascending' | 'descending' {
   if (sortBy.value !== targetSortBy) {
-    return 'Sort'
+    return 'neutral'
   }
 
-  return sortOrder.value === 'asc' ? 'Asc' : 'Desc'
+  return sortOrder.value === 'asc' ? 'ascending' : 'descending'
 }
 
 function getSortAriaSort(
@@ -193,8 +195,12 @@ function getSortAriaSort(
 }
 
 function getSortButtonLabel(targetSortBy: TransactionSortBy): string {
-  const label =
-    targetSortBy === 'createdAt' ? 'created date' : 'service fee amount'
+  const labels: Record<TransactionSortBy, string> = {
+    createdAt: 'created date',
+    totalServiceFee: 'service fee amount',
+    updatedAt: 'last update date',
+  }
+  const label = labels[targetSortBy]
 
   if (sortBy.value !== targetSortBy) {
     return `Sort by ${label}`
@@ -390,13 +396,15 @@ function resetToFirstPageAndLoad(): void {
                   @click="toggleSort('totalServiceFee')"
                 >
                   <span>Service Fee</span>
-                  <span
+                  <svg
                     class="sort-indicator"
-                    :class="{ 'is-active': sortBy === 'totalServiceFee' }"
+                    :class="`is-${getSortIndicatorState('totalServiceFee')}`"
+                    viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    {{ getSortIcon('totalServiceFee') }}
-                  </span>
+                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
+                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                  </svg>
                 </button>
               </th>
               <th :aria-sort="getSortAriaSort('createdAt')">
@@ -407,13 +415,34 @@ function resetToFirstPageAndLoad(): void {
                   @click="toggleSort('createdAt')"
                 >
                   <span>Created Date</span>
-                  <span
+                  <svg
                     class="sort-indicator"
-                    :class="{ 'is-active': sortBy === 'createdAt' }"
+                    :class="`is-${getSortIndicatorState('createdAt')}`"
+                    viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    {{ getSortIcon('createdAt') }}
-                  </span>
+                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
+                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                  </svg>
+                </button>
+              </th>
+              <th :aria-sort="getSortAriaSort('updatedAt')">
+                <button
+                  class="sort-header-button"
+                  type="button"
+                  :aria-label="getSortButtonLabel('updatedAt')"
+                  @click="toggleSort('updatedAt')"
+                >
+                  <span>Last Update</span>
+                  <svg
+                    class="sort-indicator"
+                    :class="`is-${getSortIndicatorState('updatedAt')}`"
+                    viewBox="0 0 16 16"
+                    aria-hidden="true"
+                  >
+                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
+                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                  </svg>
                 </button>
               </th>
               <th>Actions</th>
@@ -422,7 +451,7 @@ function resetToFirstPageAndLoad(): void {
 
           <tbody v-if="showSkeletonRows">
             <tr v-for="row in 8" :key="row">
-              <td v-for="cell in 7" :key="cell">
+              <td v-for="cell in 8" :key="cell">
                 <span class="table-skeleton" />
               </td>
             </tr>
@@ -455,6 +484,7 @@ function resetToFirstPageAndLoad(): void {
                 }}
               </td>
               <td>{{ formatDate(transaction.createdAt) }}</td>
+              <td>{{ formatDate(transaction.updatedAt) }}</td>
               <td>
                 <NuxtLink
                   class="details-link"
@@ -472,7 +502,7 @@ function resetToFirstPageAndLoad(): void {
 
           <tbody v-else>
             <tr>
-              <td colspan="7">
+              <td colspan="8">
                 <div class="empty-state">
                   <strong>{{ emptyStateTitle }}</strong>
                   <span>{{ emptyStateDescription }}</span>
@@ -792,6 +822,7 @@ function resetToFirstPageAndLoad(): void {
 .search-field:focus-within,
 .stage-select:focus,
 .date-field:focus-within,
+.date-field:focus,
 .clear-filters-button:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgb(79 70 229 / 0.12);
@@ -811,7 +842,7 @@ function resetToFirstPageAndLoad(): void {
 
 .transactions-table {
   border-collapse: collapse;
-  min-width: 1180px;
+  min-width: 1320px;
   width: 100%;
 }
 
@@ -862,19 +893,33 @@ function resetToFirstPageAndLoad(): void {
 }
 
 .sort-indicator {
-  background: #eef2ff;
-  border-radius: 999px;
-  color: #6b7280;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-  padding: 4px 7px;
-  text-transform: none;
+  color: #9ca3af;
+  flex: 0 0 auto;
+  height: 16px;
+  width: 16px;
 }
 
-.sort-indicator.is-active {
-  background: #4f46e5;
-  color: #ffffff;
+.sort-indicator * {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.sort-indicator.is-neutral .sort-chevron-up,
+.sort-indicator.is-neutral .sort-chevron-down {
+  opacity: 0.45;
+}
+
+.sort-indicator.is-ascending,
+.sort-indicator.is-descending {
+  color: #4f46e5;
+}
+
+.sort-indicator.is-ascending .sort-chevron-down,
+.sort-indicator.is-descending .sort-chevron-up {
+  opacity: 0.2;
 }
 
 .transactions-table td {
