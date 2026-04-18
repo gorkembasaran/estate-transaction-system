@@ -2,8 +2,14 @@
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAgentsStore } from '~/stores/agents'
-import type { Agent } from '~/types/agent'
+import type { Agent, AgentStatusFilter } from '~/types/agent'
 import { formatDate } from '~/utils/transaction-format'
+
+const statusOptions: Array<{ label: string; value: AgentStatusFilter }> = [
+  { label: 'All Agents', value: 'all' },
+  { label: 'Active', value: 'active' },
+  { label: 'Inactive', value: 'inactive' },
+]
 
 const agentsStore = useAgentsStore()
 const {
@@ -14,6 +20,7 @@ const {
 } = storeToRefs(agentsStore)
 
 const searchQuery = ref('')
+const selectedStatus = ref<AgentStatusFilter>('all')
 const currentPage = ref(1)
 const pageSize = 10
 
@@ -21,13 +28,31 @@ let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
 const normalizedSearchQuery = computed(() => searchQuery.value.trim())
 const hasSearch = computed(() => normalizedSearchQuery.value.length > 0)
+const hasActiveFilters = computed(
+  () => hasSearch.value || selectedStatus.value !== 'all',
+)
 const showSkeletonRows = computed(
   () => isLoading.value && agents.value.length === 0,
 )
 const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
+const resultScopeLabel = computed(() => {
+  if (selectedStatus.value === 'active') {
+    return 'active agent'
+  }
+
+  if (selectedStatus.value === 'inactive') {
+    return 'inactive agent'
+  }
+
+  return 'agent'
+})
 const resultSummary = computed(() => {
+  const scopeLabel = `${resultScopeLabel.value}${
+    pagination.value.totalItems === 1 ? '' : 's'
+  }`
+
   if (pagination.value.totalItems === 0) {
-    return 'Showing 0 of 0 active agents'
+    return `Showing 0 of 0 ${scopeLabel}`
   }
 
   const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
@@ -35,19 +60,25 @@ const resultSummary = computed(() => {
 
   return `Showing ${startItem}-${endItem} of ${
     pagination.value.totalItems
-  } active agent${pagination.value.totalItems === 1 ? '' : 's'}`
+  } ${scopeLabel}`
 })
 const loadedSummary = computed(() =>
-  hasSearch.value ? 'Search is handled by the agents API' : '',
+  hasActiveFilters.value ? 'Filters are handled by the agents API' : '',
 )
-const emptyStateTitle = computed(() =>
-  hasSearch.value ? 'No active agents match your search' : 'No active agents yet',
-)
-const emptyStateDescription = computed(() =>
-  hasSearch.value
-    ? 'Try a different name or email address.'
-    : 'Create your first active agent before creating transactions.',
-)
+const emptyStateTitle = computed(() => {
+  if (hasActiveFilters.value) {
+    return 'No agents match your current filters'
+  }
+
+  return 'No agents yet'
+})
+const emptyStateDescription = computed(() => {
+  if (hasActiveFilters.value) {
+    return 'Try a different name, email address, or status filter.'
+  }
+
+  return 'Create your first agent before creating transactions.'
+})
 
 async function loadAgents(forceRefresh = false): Promise<void> {
   await agentsStore
@@ -56,6 +87,7 @@ async function loadAgents(forceRefresh = false): Promise<void> {
       limit: pageSize,
       page: currentPage.value,
       search: normalizedSearchQuery.value || undefined,
+      status: selectedStatus.value,
     })
     .catch(() => undefined)
 }
@@ -80,8 +112,9 @@ function goToNextPage(): void {
   currentPage.value += 1
 }
 
-function clearSearch(): void {
+function clearFilters(): void {
   searchQuery.value = ''
+  selectedStatus.value = 'all'
   resetToFirstPageAndLoad()
 }
 
@@ -120,6 +153,10 @@ watch(searchQuery, () => {
   }, 300)
 })
 
+watch(selectedStatus, () => {
+  resetToFirstPageAndLoad()
+})
+
 watch(currentPage, () => {
   void loadAgents()
 })
@@ -132,7 +169,7 @@ watch(currentPage, () => {
         <h1 id="agents-title">
           Agents
         </h1>
-        <p>Manage active real estate agents</p>
+        <p>Manage real estate agents</p>
       </div>
 
       <NuxtLink class="create-button" to="/agents/create">
@@ -143,7 +180,7 @@ watch(currentPage, () => {
 
     <div v-if="error" class="agents-alert" role="alert">
       <div>
-        <strong>Could not load active agents</strong>
+        <strong>Could not load agents</strong>
         <p>{{ error }}</p>
       </div>
 
@@ -152,28 +189,44 @@ watch(currentPage, () => {
       </button>
     </div>
 
-    <section class="agents-toolbar" aria-label="Agent search">
-      <div class="search-field">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <path d="m16.5 16.5 3.5 3.5" />
-        </svg>
-        <input
-          v-model="searchQuery"
-          type="search"
-          placeholder="Search active agents by name or email..."
-          aria-label="Search active agents"
-        >
-      </div>
+    <section class="agents-toolbar" aria-label="Agent filters">
+      <div class="agents-filter-row">
+        <div class="search-field">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m16.5 16.5 3.5 3.5" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="search"
+            placeholder="Search agents by name or email..."
+            aria-label="Search agents"
+          >
+        </div>
 
-      <button
-        v-if="hasSearch"
-        class="clear-search-button"
-        type="button"
-        @click="clearSearch"
-      >
-        Clear search
-      </button>
+        <select
+          v-model="selectedStatus"
+          class="status-select"
+          aria-label="Filter agents by status"
+        >
+          <option
+            v-for="statusOption in statusOptions"
+            :key="statusOption.value"
+            :value="statusOption.value"
+          >
+            {{ statusOption.label }}
+          </option>
+        </select>
+
+        <button
+          v-if="hasActiveFilters"
+          class="clear-search-button"
+          type="button"
+          @click="clearFilters"
+        >
+          Clear filters
+        </button>
+      </div>
 
       <p>{{ resultSummary }}</p>
       <span v-if="loadedSummary" class="loaded-summary">
@@ -181,7 +234,7 @@ watch(currentPage, () => {
       </span>
     </section>
 
-    <section class="agents-table-card" aria-label="Active agents">
+    <section class="agents-table-card" aria-label="Agents">
       <div class="agents-table-wrap">
         <table class="agents-table">
           <thead>
@@ -244,7 +297,7 @@ watch(currentPage, () => {
                   <strong>{{ emptyStateTitle }}</strong>
                   <span>{{ emptyStateDescription }}</span>
                   <NuxtLink
-                    v-if="!hasSearch"
+                    v-if="!hasActiveFilters"
                     class="empty-action"
                     to="/agents/create"
                   >
@@ -387,6 +440,13 @@ watch(currentPage, () => {
   padding: 28px 32px;
 }
 
+.agents-filter-row {
+  align-items: center;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 240px auto;
+}
+
 .search-field {
   align-items: center;
   border: 1px solid #d1d5db;
@@ -431,18 +491,46 @@ watch(currentPage, () => {
   color: #6b7280;
 }
 
+.status-select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #4b5563 50%) right 18px top 20px /
+      7px 7px no-repeat,
+    linear-gradient(135deg, #4b5563 50%, transparent 50%) right 12px top 20px /
+      7px 7px no-repeat,
+    #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #111827;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  min-height: 50px;
+  outline: 0;
+  padding: 0 44px 0 16px;
+}
+
+.status-select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.12);
+}
+
 .clear-search-button {
+  align-items: center;
   background: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   color: #374151;
   cursor: pointer;
+  display: inline-flex;
   font: inherit;
   font-size: 14px;
   font-weight: 800;
+  justify-content: center;
   justify-self: start;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 50px;
+  padding: 0 18px;
+  white-space: nowrap;
 }
 
 .clear-search-button:hover {
@@ -673,6 +761,10 @@ watch(currentPage, () => {
 
   .agents-toolbar {
     padding: 22px;
+  }
+
+  .agents-filter-row {
+    grid-template-columns: 1fr;
   }
 
   .agents-pagination {

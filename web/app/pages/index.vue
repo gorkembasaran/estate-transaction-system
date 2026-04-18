@@ -68,7 +68,10 @@ const errorMessage = computed(
 async function loadDashboard(forceRefresh = false): Promise<void> {
   const results = await Promise.allSettled([
     transactionsStore.fetchTransactions(forceRefresh),
-    agentsStore.fetchAgents(forceRefresh),
+    agentsStore.fetchAgents({
+      forceRefresh,
+      status: 'active',
+    }),
   ])
 
   const rejectedResult = results.find((result) => result.status === 'rejected')

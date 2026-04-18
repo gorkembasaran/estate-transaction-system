@@ -259,8 +259,7 @@ onMounted(() => {
         <span class="checkbox-copy">
           <strong>Active Status</strong>
           <small>
-            Active agents appear in agent lists and can be assigned to
-            transactions.
+            Active agents are available for selection in transaction forms.
           </small>
         </span>
       </label>

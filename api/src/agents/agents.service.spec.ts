@@ -110,7 +110,7 @@ describe('AgentsService', () => {
     });
   });
 
-  it('returns an empty array when no active agents exist', async () => {
+  it('returns an empty page when no agents exist', async () => {
     const query = createFindQuery([]);
     const countQuery = createCountQuery(0);
     agentModel.find.mockReturnValue(query);

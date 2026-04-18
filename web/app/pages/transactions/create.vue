@@ -42,7 +42,12 @@ const formError = computed(
 const hasAgents = computed(() => agents.value.length > 0)
 
 async function loadAgents(forceRefresh = false): Promise<void> {
-  await agentsStore.fetchAgents(forceRefresh).catch(() => undefined)
+  await agentsStore
+    .fetchAgents({
+      forceRefresh,
+      status: 'active',
+    })
+    .catch(() => undefined)
 }
 
 async function submitTransaction(): Promise<void> {

@@ -304,8 +304,8 @@ onMounted(async () => {
           <span class="checkbox-copy">
             <strong>Active Status</strong>
             <small>
-              Inactive agents remain stored but are not returned by the active
-              agents list.
+              Inactive agents remain stored and can be viewed with the status
+              filter.
             </small>
           </span>
         </label>
