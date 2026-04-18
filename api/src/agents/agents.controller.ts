@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { AgentsService } from './agents.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
+import { GetAgentsQueryDto } from './dto/get-agents-query.dto';
+import { UpdateAgentDto } from './dto/update-agent.dto';
 
 @Controller('agents')
 export class AgentsController {
@@ -12,12 +14,20 @@ export class AgentsController {
   }
 
   @Get()
-  getAllAgents() {
-    return this.agentsService.getAllAgents();
+  getAllAgents(@Query() query: GetAgentsQueryDto) {
+    return this.agentsService.getAllAgents(query);
   }
 
   @Get(':id')
   getAgentById(@Param('id') id: string) {
     return this.agentsService.getAgentById(id);
+  }
+
+  @Patch(':id')
+  updateAgent(
+    @Param('id') id: string,
+    @Body() updateAgentDto: UpdateAgentDto,
+  ) {
+    return this.agentsService.updateAgent(id, updateAgentDto);
   }
 }

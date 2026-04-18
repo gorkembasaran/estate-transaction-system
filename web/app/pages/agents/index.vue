@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useAgentsStore } from '~/stores/agents'
 import type { Agent } from '~/types/agent'
 import { formatDate } from '~/utils/transaction-format'
@@ -10,36 +10,36 @@ const {
   error,
   isLoading,
   items: agents,
+  pagination,
 } = storeToRefs(agentsStore)
 
 const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = 10
 
-const normalizedSearchQuery = computed(() =>
-  searchQuery.value.trim().toLowerCase(),
-)
-const filteredAgents = computed(() => {
-  if (!normalizedSearchQuery.value) {
-    return agents.value
-  }
+let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
-  return agents.value.filter((agent) => {
-    const searchableText = `${agent.fullName} ${agent.email}`.toLowerCase()
-
-    return searchableText.includes(normalizedSearchQuery.value)
-  })
-})
+const normalizedSearchQuery = computed(() => searchQuery.value.trim())
+const hasSearch = computed(() => normalizedSearchQuery.value.length > 0)
 const showSkeletonRows = computed(
   () => isLoading.value && agents.value.length === 0,
 )
-const hasSearch = computed(() => normalizedSearchQuery.value.length > 0)
+const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
 const resultSummary = computed(() => {
-  const visibleCount = filteredAgents.value.length
-  const totalCount = agents.value.length
+  if (pagination.value.totalItems === 0) {
+    return 'Showing 0 of 0 active agents'
+  }
 
-  return `Showing ${visibleCount} of ${totalCount} active agent${
-    totalCount === 1 ? '' : 's'
-  }`
+  const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
+  const endItem = startItem + agents.value.length - 1
+
+  return `Showing ${startItem}-${endItem} of ${
+    pagination.value.totalItems
+  } active agent${pagination.value.totalItems === 1 ? '' : 's'}`
 })
+const loadedSummary = computed(() =>
+  hasSearch.value ? 'Search is handled by the agents API' : '',
+)
 const emptyStateTitle = computed(() =>
   hasSearch.value ? 'No active agents match your search' : 'No active agents yet',
 )
@@ -50,11 +50,39 @@ const emptyStateDescription = computed(() =>
 )
 
 async function loadAgents(forceRefresh = false): Promise<void> {
-  await agentsStore.fetchAgents(forceRefresh).catch(() => undefined)
+  await agentsStore
+    .fetchAgents({
+      forceRefresh,
+      limit: pageSize,
+      page: currentPage.value,
+      search: normalizedSearchQuery.value || undefined,
+    })
+    .catch(() => undefined)
 }
 
 async function retryAgents(): Promise<void> {
   await loadAgents(true)
+}
+
+function goToPreviousPage(): void {
+  if (!pagination.value.hasPreviousPage || isLoading.value) {
+    return
+  }
+
+  currentPage.value -= 1
+}
+
+function goToNextPage(): void {
+  if (!pagination.value.hasNextPage || isLoading.value) {
+    return
+  }
+
+  currentPage.value += 1
+}
+
+function clearSearch(): void {
+  searchQuery.value = ''
+  resetToFirstPageAndLoad()
 }
 
 function getAgentInitials(agent: Agent): string {
@@ -69,7 +97,30 @@ function getAgentInitials(agent: Agent): string {
   return initials || 'A'
 }
 
+function resetToFirstPageAndLoad(): void {
+  if (currentPage.value === 1) {
+    void loadAgents()
+    return
+  }
+
+  currentPage.value = 1
+}
+
 onMounted(() => {
+  void loadAgents()
+})
+
+watch(searchQuery, () => {
+  if (searchDebounce) {
+    clearTimeout(searchDebounce)
+  }
+
+  searchDebounce = setTimeout(() => {
+    resetToFirstPageAndLoad()
+  }, 300)
+})
+
+watch(currentPage, () => {
   void loadAgents()
 })
 </script>
@@ -115,7 +166,19 @@ onMounted(() => {
         >
       </div>
 
+      <button
+        v-if="hasSearch"
+        class="clear-search-button"
+        type="button"
+        @click="clearSearch"
+      >
+        Clear search
+      </button>
+
       <p>{{ resultSummary }}</p>
+      <span v-if="loadedSummary" class="loaded-summary">
+        {{ loadedSummary }}
+      </span>
     </section>
 
     <section class="agents-table-card" aria-label="Active agents">
@@ -127,19 +190,20 @@ onMounted(() => {
               <th>Email</th>
               <th>Status</th>
               <th>Created Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody v-if="showSkeletonRows">
             <tr v-for="row in 6" :key="row">
-              <td v-for="cell in 4" :key="cell">
+              <td v-for="cell in 5" :key="cell">
                 <span class="table-skeleton" />
               </td>
             </tr>
           </tbody>
 
-          <tbody v-else-if="filteredAgents.length > 0">
-            <tr v-for="agent in filteredAgents" :key="agent._id">
+          <tbody v-else-if="agents.length > 0">
+            <tr v-for="agent in agents" :key="agent._id">
               <td>
                 <div class="agent-name-cell">
                   <span class="agent-avatar" aria-hidden="true">
@@ -162,12 +226,20 @@ onMounted(() => {
                 </span>
               </td>
               <td>{{ formatDate(agent.createdAt) }}</td>
+              <td>
+                <NuxtLink
+                  class="edit-link"
+                  :to="`/agents/${agent._id}/edit`"
+                >
+                  Edit Agent
+                </NuxtLink>
+              </td>
             </tr>
           </tbody>
 
           <tbody v-else>
             <tr>
-              <td colspan="4">
+              <td colspan="5">
                 <div class="empty-state">
                   <strong>{{ emptyStateTitle }}</strong>
                   <span>{{ emptyStateDescription }}</span>
@@ -183,6 +255,26 @@ onMounted(() => {
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div v-if="hasMultiplePages" class="agents-pagination">
+        <button
+          type="button"
+          :disabled="!pagination.hasPreviousPage || isLoading"
+          @click="goToPreviousPage"
+        >
+          Previous
+        </button>
+
+        <span>Page {{ pagination.page }} of {{ pagination.totalPages }}</span>
+
+        <button
+          type="button"
+          :disabled="!pagination.hasNextPage || isLoading"
+          @click="goToNextPage"
+        >
+          Next
+        </button>
       </div>
     </section>
   </section>
@@ -339,11 +431,36 @@ onMounted(() => {
   color: #6b7280;
 }
 
+.clear-search-button {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  justify-self: start;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.clear-search-button:hover {
+  border-color: #c7d2fe;
+  color: #4f46e5;
+}
+
 .agents-toolbar p {
   color: #4b5563;
   font-size: 16px;
   font-weight: 700;
   margin: 0;
+}
+
+.loaded-summary {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .agents-table-card {
@@ -360,7 +477,7 @@ onMounted(() => {
 
 .agents-table {
   border-collapse: collapse;
-  min-width: 920px;
+  min-width: 1040px;
   width: 100%;
 }
 
@@ -442,6 +559,15 @@ onMounted(() => {
   color: #15803d;
 }
 
+.edit-link {
+  color: #4f46e5;
+  font-weight: 800;
+}
+
+.edit-link:hover {
+  color: #3730a3;
+}
+
 .table-skeleton {
   animation: pulse 1.25s ease-in-out infinite;
   background: #e5e7eb;
@@ -471,6 +597,44 @@ onMounted(() => {
   font-size: 14px;
   min-height: 40px;
   padding: 0 16px;
+}
+
+.agents-pagination {
+  align-items: center;
+  border-top: 1px solid #edf0f3;
+  display: flex;
+  gap: 16px;
+  justify-content: flex-end;
+  padding: 18px 32px;
+}
+
+.agents-pagination button {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #111827;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  min-height: 40px;
+  padding: 0 18px;
+}
+
+.agents-pagination button:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.agents-pagination button:hover:not(:disabled) {
+  border-color: #c7d2fe;
+  color: #4f46e5;
+}
+
+.agents-pagination span {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 @keyframes pulse {
@@ -509,6 +673,11 @@ onMounted(() => {
 
   .agents-toolbar {
     padding: 22px;
+  }
+
+  .agents-pagination {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 </style>

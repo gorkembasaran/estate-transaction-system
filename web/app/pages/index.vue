@@ -17,6 +17,7 @@ const {
   error: agentsError,
   isLoading: agentsLoading,
   items: agents,
+  pagination: agentsPagination,
 } = storeToRefs(agentsStore)
 const {
   error: transactionsError,
@@ -142,7 +143,7 @@ onMounted(() => {
         :is-loading="showSkeletons"
         label="Active Agents"
         supporting-label="Available agents"
-        :value="agents.length"
+        :value="agentsPagination.totalItems"
       />
     </div>
 
