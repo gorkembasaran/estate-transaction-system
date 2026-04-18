@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, reactive, ref } from 'vue'
+import AgentCombobox from '~/components/agents/AgentCombobox.vue'
 import { useAgentsStore } from '~/stores/agents'
 import { useTransactionsStore } from '~/stores/transactions'
 import type { CreateTransactionPayload } from '~/types/transaction'
+
+const currencyOptions = [
+  { label: 'US Dollar', value: 'USD' },
+  { label: 'Euro', value: 'EUR' },
+  { label: 'Turkish Lira', value: 'TRY' },
+  { label: 'British Pound', value: 'GBP' },
+]
 
 const agentsStore = useAgentsStore()
 const transactionsStore = useTransactionsStore()
@@ -42,7 +50,7 @@ async function submitTransaction(): Promise<void> {
 
   const serviceFee = Number(serviceFeeInput.value)
   const payload: CreateTransactionPayload = {
-    currency: form.currency.trim().toUpperCase(),
+    currency: form.currency,
     listingAgentId: form.listingAgentId,
     propertyTitle: form.propertyTitle.trim(),
     sellingAgentId: form.sellingAgentId,
@@ -64,8 +72,8 @@ async function submitTransaction(): Promise<void> {
     return
   }
 
-  if (payload.currency.length !== 3) {
-    localError.value = 'Currency must use a 3-letter code.'
+  if (!currencyOptions.some((currency) => currency.value === payload.currency)) {
+    localError.value = 'Please select a supported currency.'
     return
   }
 
@@ -123,29 +131,25 @@ onMounted(() => {
         >
       </label>
 
-      <label class="form-field">
-        <span>Listing Agent *</span>
-        <select v-model="form.listingAgentId" name="listingAgentId">
-          <option value="" disabled>
-            Select listing agent
-          </option>
-          <option v-for="agent in agents" :key="agent._id" :value="agent._id">
-            {{ agent.fullName }}
-          </option>
-        </select>
-      </label>
+      <AgentCombobox
+        v-model="form.listingAgentId"
+        :agents="agents"
+        :disabled="!hasAgents"
+        label="Listing Agent"
+        :loading="agentsLoading"
+        name="listingAgentId"
+        placeholder="Select listing agent"
+      />
 
-      <label class="form-field">
-        <span>Selling Agent *</span>
-        <select v-model="form.sellingAgentId" name="sellingAgentId">
-          <option value="" disabled>
-            Select selling agent
-          </option>
-          <option v-for="agent in agents" :key="agent._id" :value="agent._id">
-            {{ agent.fullName }}
-          </option>
-        </select>
-      </label>
+      <AgentCombobox
+        v-model="form.sellingAgentId"
+        :agents="agents"
+        :disabled="!hasAgents"
+        label="Selling Agent"
+        :loading="agentsLoading"
+        name="sellingAgentId"
+        placeholder="Select selling agent"
+      />
 
       <label class="form-field">
         <span>Service Fee *</span>
@@ -161,15 +165,24 @@ onMounted(() => {
 
       <label class="form-field">
         <span>Currency *</span>
-        <input
-          v-model="form.currency"
-          autocomplete="off"
-          maxlength="3"
-          name="currency"
-          placeholder="USD"
-          type="text"
-          @blur="form.currency = form.currency.trim().toUpperCase()"
-        >
+        <span class="select-control">
+          <select
+            v-model="form.currency"
+            name="currency"
+            aria-label="Select currency"
+          >
+            <option
+              v-for="currency in currencyOptions"
+              :key="currency.value"
+              :value="currency.value"
+            >
+              {{ currency.value }} - {{ currency.label }}
+            </option>
+          </select>
+          <svg class="select-chevron" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="m4 6 4 4 4-4" />
+          </svg>
+        </span>
       </label>
 
       <div v-if="!isPageLoading && !hasAgents" class="form-note">
@@ -222,19 +235,21 @@ onMounted(() => {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgb(15 23 42 / 0.08);
+  box-shadow:
+    0 18px 45px rgb(15 23 42 / 0.08),
+    0 2px 8px rgb(15 23 42 / 0.04);
   display: grid;
-  gap: 20px;
+  gap: 22px;
   margin: 0 auto;
-  max-width: 548px;
-  padding: 32px;
+  max-width: 620px;
+  padding: 40px;
 }
 
 .transaction-form-card h1 {
   color: #111827;
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1.2;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
 .form-alert {
@@ -271,23 +286,48 @@ onMounted(() => {
 
 .form-field input,
 .form-field select {
-  background: #ffffff;
+  background: #fcfcfd;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   color: #111827;
   font: inherit;
   font-size: 15px;
-  min-height: 42px;
+  font-weight: 650;
+  min-height: 56px;
   outline: 0;
-  padding: 0 14px;
+  padding: 0 18px;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .form-field select {
-  appearance: auto;
+  appearance: none;
+  padding-right: 48px;
+  width: 100%;
+}
+
+.form-field input:hover,
+.form-field select:hover {
+  background: #ffffff;
+  border-color: #b8c0cc;
+}
+
+.form-field input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.form-field input[type='number']::-webkit-inner-spin-button,
+.form-field input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .form-field input::placeholder {
   color: #9ca3af;
+  font-weight: 600;
 }
 
 .form-field input:focus,
@@ -296,11 +336,35 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgb(79 70 229 / 0.12);
 }
 
+.select-control {
+  display: block;
+  position: relative;
+}
+
+.select-chevron {
+  color: #4f46e5;
+  height: 18px;
+  pointer-events: none;
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+}
+
+.select-chevron * {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
 .form-actions {
   display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(0, 1fr) 82px;
-  margin-top: 12px;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  margin-top: 10px;
 }
 
 .primary-button,
@@ -312,19 +376,26 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 800;
   justify-content: center;
-  min-height: 44px;
+  min-height: 52px;
   padding: 0 18px;
 }
 
 .primary-button {
   background: #4f46e5;
   border: 1px solid #4f46e5;
+  box-shadow: 0 8px 18px rgb(79 70 229 / 0.22);
   color: #ffffff;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .primary-button:hover:not(:disabled) {
   background: #4338ca;
+  box-shadow: 0 10px 22px rgb(79 70 229 / 0.26);
+  transform: translateY(-1px);
 }
 
 .primary-button:disabled {
@@ -336,9 +407,14 @@ onMounted(() => {
   background: #ffffff;
   border: 1px solid #e5e7eb;
   color: #374151;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background-color 160ms ease;
 }
 
 .secondary-button:hover {
+  background: #f9fafb;
   border-color: #c7d2fe;
   color: #4f46e5;
 }
