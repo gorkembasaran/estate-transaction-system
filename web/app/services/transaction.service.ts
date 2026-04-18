@@ -8,6 +8,8 @@ import type {
   UpdateTransactionStagePayload,
 } from '~/types/transaction'
 
+type TransactionsListResponse = Transaction[] | PaginatedTransactionsResponse
+
 function getApiClient(): AxiosInstance {
   return useNuxtApp().$api
 }
@@ -15,14 +17,26 @@ function getApiClient(): AxiosInstance {
 export async function getTransactions(
   params?: GetTransactionsParams,
 ): Promise<PaginatedTransactionsResponse> {
-  const { data } = await getApiClient().get<PaginatedTransactionsResponse>(
+  const { data } = await getApiClient().get<TransactionsListResponse>(
     '/transactions',
-    {
-      params,
-    },
+    { params },
   )
 
-  return data
+  if (!Array.isArray(data)) {
+    return data
+  }
+
+  return {
+    items: data,
+    meta: {
+      hasNextPage: false,
+      hasPreviousPage: false,
+      limit: data.length,
+      page: 1,
+      totalItems: data.length,
+      totalPages: data.length > 0 ? 1 : 0,
+    },
+  }
 }
 
 export async function getTransactionById(id: string): Promise<Transaction> {

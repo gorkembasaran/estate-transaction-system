@@ -28,11 +28,23 @@ const {
 
 const searchQuery = ref('')
 const selectedStage = ref<TransactionStage | 'all'>('all')
+const dateFrom = ref('')
+const dateTo = ref('')
 const currentPage = ref(1)
-const pageSize = 8
+const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
+const normalizedSearchQuery = computed(() =>
+  searchQuery.value.trim().toLowerCase(),
+)
+const hasActiveFilters = computed(
+  () =>
+    normalizedSearchQuery.value.length > 0 ||
+    selectedStage.value !== 'all' ||
+    dateFrom.value.length > 0 ||
+    dateTo.value.length > 0,
+)
 const resultSummary = computed(() => {
   if (pagination.value.totalItems === 0) {
     return 'Showing 0 of 0 transactions'
@@ -43,35 +55,44 @@ const resultSummary = computed(() => {
 
   return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
 })
+const loadedSummary = computed(() => {
+  if (!hasActiveFilters.value) {
+    return ''
+  }
+
+  return 'Filtered by the transaction API'
+})
 const showSkeletonRows = computed(
   () => isLoading.value && transactions.value.length === 0,
 )
 const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
+const emptyStateTitle = computed(() =>
+  hasActiveFilters.value
+    ? 'No transactions match your current filters'
+    : 'No transactions yet',
+)
+const emptyStateDescription = computed(() =>
+  hasActiveFilters.value
+    ? 'Adjust the search text or stage filter to widen the result set.'
+    : 'Create a transaction to start tracking lifecycle and commission activity.',
+)
 
 async function loadTransactions(forceRefresh = false): Promise<void> {
   await transactionsStore
     .fetchTransactions({
       forceRefresh,
+      dateFrom: dateFrom.value || undefined,
+      dateTo: dateTo.value || undefined,
       limit: pageSize,
       page: currentPage.value,
-      search: searchQuery.value.trim() || undefined,
-      stage:
-        selectedStage.value === 'all' ? undefined : selectedStage.value,
+      search: normalizedSearchQuery.value || undefined,
+      stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
     })
     .catch(() => undefined)
 }
 
 async function retryTransactions(): Promise<void> {
   await loadTransactions(true)
-}
-
-function resetToFirstPageAndLoad(): void {
-  if (currentPage.value === 1) {
-    void loadTransactions()
-    return
-  }
-
-  currentPage.value = 1
 }
 
 function goToPreviousPage(): void {
@@ -90,12 +111,16 @@ function goToNextPage(): void {
   currentPage.value += 1
 }
 
+function clearFilters(): void {
+  searchQuery.value = ''
+  selectedStage.value = 'all'
+  dateFrom.value = ''
+  dateTo.value = ''
+  resetToFirstPageAndLoad()
+}
+
 onMounted(() => {
   void loadTransactions()
-})
-
-watch(selectedStage, () => {
-  resetToFirstPageAndLoad()
 })
 
 watch(searchQuery, () => {
@@ -108,9 +133,22 @@ watch(searchQuery, () => {
   }, 300)
 })
 
+watch([selectedStage, dateFrom, dateTo], () => {
+  resetToFirstPageAndLoad()
+})
+
 watch(currentPage, () => {
   void loadTransactions()
 })
+
+function resetToFirstPageAndLoad(): void {
+  if (currentPage.value === 1) {
+    void loadTransactions()
+    return
+  }
+
+  currentPage.value = 1
+}
 </script>
 
 <template>
@@ -149,7 +187,7 @@ watch(currentPage, () => {
         <input
           v-model="searchQuery"
           type="search"
-          placeholder="Search transactions..."
+          placeholder="Search property or currency..."
           aria-label="Search transactions"
         >
       </div>
@@ -168,7 +206,37 @@ watch(currentPage, () => {
         </option>
       </select>
 
+      <label class="date-field">
+        <span>From</span>
+        <input
+          v-model="dateFrom"
+          type="date"
+          aria-label="Filter transactions from date"
+        >
+      </label>
+
+      <label class="date-field">
+        <span>To</span>
+        <input
+          v-model="dateTo"
+          type="date"
+          aria-label="Filter transactions to date"
+        >
+      </label>
+
+      <button
+        v-if="hasActiveFilters"
+        class="clear-filters-button"
+        type="button"
+        @click="clearFilters"
+      >
+        Clear filters
+      </button>
+
       <p>{{ resultSummary }}</p>
+      <span v-if="loadedSummary" class="loaded-summary">
+        {{ loadedSummary }}
+      </span>
     </section>
 
     <section class="transactions-table-card" aria-label="Transactions">
@@ -240,10 +308,8 @@ watch(currentPage, () => {
             <tr>
               <td colspan="7">
                 <div class="empty-state">
-                  <strong>No transactions found</strong>
-                  <span>
-                    Try another search or create a new transaction.
-                  </span>
+                  <strong>{{ emptyStateTitle }}</strong>
+                  <span>{{ emptyStateDescription }}</span>
                 </div>
               </td>
             </tr>
@@ -375,7 +441,12 @@ watch(currentPage, () => {
   box-shadow: 0 2px 5px rgb(15 23 42 / 0.08);
   display: grid;
   gap: 18px 22px;
-  grid-template-columns: minmax(260px, 1fr) minmax(220px, 1fr);
+  grid-template-columns:
+    minmax(260px, 1.35fr)
+    minmax(180px, 0.8fr)
+    minmax(150px, 0.55fr)
+    minmax(150px, 0.55fr)
+    auto;
   padding: 32px;
 }
 
@@ -385,6 +456,14 @@ watch(currentPage, () => {
   font-weight: 600;
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.loaded-summary {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 600;
+  grid-column: 1 / -1;
+  margin-top: -10px;
 }
 
 .search-field {
@@ -439,8 +518,58 @@ watch(currentPage, () => {
   padding: 0 16px;
 }
 
+.date-field {
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  min-height: 50px;
+  padding: 0 14px;
+}
+
+.date-field span {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.date-field input {
+  border: 0;
+  color: #111827;
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  min-width: 0;
+  outline: 0;
+}
+
+.clear-filters-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 16px;
+  white-space: nowrap;
+}
+
+.clear-filters-button:hover {
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
 .search-field:focus-within,
-.stage-select:focus {
+.stage-select:focus,
+.date-field:focus-within,
+.clear-filters-button:focus {
   border-color: #4f46e5;
   box-shadow: 0 0 0 3px rgb(79 70 229 / 0.12);
 }

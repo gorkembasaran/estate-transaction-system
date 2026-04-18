@@ -242,6 +242,8 @@ function normalizeFetchOptions(options: FetchTransactionsOptions): {
     params: {
       limit: params.limit ?? DEFAULT_LIMIT,
       page: params.page ?? DEFAULT_PAGE,
+      dateFrom: params.dateFrom || undefined,
+      dateTo: params.dateTo || undefined,
       search: params.search || undefined,
       stage: params.stage,
     },
@@ -252,6 +254,8 @@ function createRequestKey(params: GetTransactionsParams): string {
   return JSON.stringify({
     limit: params.limit ?? DEFAULT_LIMIT,
     page: params.page ?? DEFAULT_PAGE,
+    dateFrom: params.dateFrom ?? '',
+    dateTo: params.dateTo ?? '',
     search: params.search ?? '',
     stage: params.stage ?? '',
   })

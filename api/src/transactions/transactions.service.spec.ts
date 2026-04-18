@@ -342,6 +342,45 @@ describe('TransactionsService', () => {
     });
   });
 
+  it('applies created date range filters when listing transactions', async () => {
+    const query = createFindQuery([]);
+    transactionModel.find.mockReturnValue(query);
+    transactionModel.countDocuments.mockReturnValue(createCountQuery(0));
+
+    await service.getAllTransactions({
+      dateFrom: '2026-04-01',
+      dateTo: '2026-04-30',
+      limit: 10,
+      page: 1,
+    });
+
+    const expectedFilter = {
+      createdAt: {
+        $gte: new Date('2026-04-01T00:00:00.000Z'),
+        $lte: new Date('2026-04-30T23:59:59.999Z'),
+      },
+    };
+
+    expect(transactionModel.find).toHaveBeenCalledWith(expectedFilter);
+    expect(transactionModel.countDocuments).toHaveBeenCalledWith(
+      expectedFilter,
+    );
+  });
+
+  it('throws BadRequestException when date range is invalid', async () => {
+    await expect(
+      service.getAllTransactions({
+        dateFrom: '2026-04-30',
+        dateTo: '2026-04-01',
+        limit: 10,
+        page: 1,
+      }),
+    ).rejects.toThrow(BadRequestException);
+
+    expect(transactionModel.find).not.toHaveBeenCalled();
+    expect(transactionModel.countDocuments).not.toHaveBeenCalled();
+  });
+
   it('returns a transaction with populated agent fields', async () => {
     const transaction = createTransactionDocumentMock({
       stage: 'agreement',

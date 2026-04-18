@@ -54,6 +54,8 @@ export interface UpdateTransactionStagePayload {
 }
 
 export interface GetTransactionsParams {
+  dateFrom?: string
+  dateTo?: string
   limit?: number
   page?: number
   search?: string

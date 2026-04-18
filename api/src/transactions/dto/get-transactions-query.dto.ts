@@ -1,5 +1,13 @@
 import { Transform, Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import {
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
 import type { TransactionStage } from '../enums/transaction-stage.enum';
 
@@ -25,4 +33,18 @@ export class GetTransactionsQueryDto {
   @IsString()
   @IsOptional()
   search?: string;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() || undefined : value,
+  )
+  @IsDateString()
+  @IsOptional()
+  dateFrom?: string;
+
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() || undefined : value,
+  )
+  @IsDateString()
+  @IsOptional()
+  dateTo?: string;
 }

@@ -16,6 +16,10 @@ import { Transaction, TransactionDocument } from './schemas/transaction.schema';
 
 type TransactionListFilter = {
   $or?: Array<{ currency: RegExp } | { propertyTitle: RegExp }>;
+  createdAt?: {
+    $gte?: Date;
+    $lte?: Date;
+  };
   stage?: TransactionStage;
 };
 
@@ -165,10 +169,60 @@ export class TransactionsService {
       ];
     }
 
+    const dateFilter = this.buildCreatedAtFilter(query);
+
+    if (dateFilter) {
+      filter.createdAt = dateFilter;
+    }
+
     return filter;
+  }
+
+  private buildCreatedAtFilter(query: GetTransactionsQueryDto) {
+    if (!query.dateFrom && !query.dateTo) {
+      return null;
+    }
+
+    const createdAtFilter: TransactionListFilter['createdAt'] = {};
+
+    if (query.dateFrom) {
+      createdAtFilter.$gte = createDateBoundary(query.dateFrom, 'start');
+    }
+
+    if (query.dateTo) {
+      createdAtFilter.$lte = createDateBoundary(query.dateTo, 'end');
+    }
+
+    if (
+      createdAtFilter.$gte &&
+      createdAtFilter.$lte &&
+      createdAtFilter.$gte > createdAtFilter.$lte
+    ) {
+      throw new BadRequestException(
+        'dateFrom must be earlier than or equal to dateTo',
+      );
+    }
+
+    return createdAtFilter;
   }
 }
 
 function escapeRegex(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function createDateBoundary(value: string, boundary: 'start' | 'end') {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new BadRequestException(`Invalid date value: "${value}"`);
+  }
+
+  if (boundary === 'start') {
+    date.setUTCHours(0, 0, 0, 0);
+  } else {
+    date.setUTCHours(23, 59, 59, 999);
+  }
+
+  return date;
 }
