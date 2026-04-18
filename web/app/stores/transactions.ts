@@ -10,10 +10,15 @@ import type {
   CreateTransactionPayload,
   FinancialBreakdown,
   Transaction,
+  TransactionAgentReference,
   TransactionStage,
   UpdateTransactionStagePayload,
 } from '~/types/transaction'
 import { getStoreErrorMessage } from '~/utils/store-error'
+
+const CACHE_TTL_MS = 60_000
+
+let fetchTransactionsPromise: Promise<void> | null = null
 
 interface TransactionsState {
   items: Transaction[]
@@ -21,6 +26,7 @@ interface TransactionsState {
   breakdown: FinancialBreakdown | null
   isLoading: boolean
   error: string | null
+  lastFetchedAt: number | null
 }
 
 export const useTransactionsStore = defineStore('transactions', {
@@ -30,21 +36,36 @@ export const useTransactionsStore = defineStore('transactions', {
     breakdown: null,
     isLoading: false,
     error: null,
+    lastFetchedAt: null,
   }),
 
   actions: {
-    async fetchTransactions(): Promise<void> {
+    async fetchTransactions(forceRefresh = false): Promise<void> {
+      if (!forceRefresh && isCacheFresh(this.lastFetchedAt)) {
+        return
+      }
+
+      if (fetchTransactionsPromise) {
+        return fetchTransactionsPromise
+      }
+
       this.isLoading = true
       this.error = null
 
-      try {
-        this.items = await getTransactions()
-      } catch (error) {
-        this.error = getStoreErrorMessage(error)
-        throw error
-      } finally {
-        this.isLoading = false
-      }
+      fetchTransactionsPromise = (async () => {
+        try {
+          this.items = await getTransactions()
+          this.lastFetchedAt = Date.now()
+        } catch (error) {
+          this.error = getStoreErrorMessage(error)
+          throw error
+        } finally {
+          this.isLoading = false
+          fetchTransactionsPromise = null
+        }
+      })()
+
+      return fetchTransactionsPromise
     },
 
     async fetchTransactionById(id: string): Promise<void> {
@@ -75,6 +96,10 @@ export const useTransactionsStore = defineStore('transactions', {
         this.selectedTransaction = transaction
         this.breakdown = transaction.breakdown
 
+        if (this.lastFetchedAt) {
+          this.lastFetchedAt = Date.now()
+        }
+
         return transaction
       } catch (error) {
         this.error = getStoreErrorMessage(error)
@@ -93,13 +118,24 @@ export const useTransactionsStore = defineStore('transactions', {
 
       try {
         const payload: UpdateTransactionStagePayload = { stage }
-        const transaction = await updateTransactionStageRequest(id, payload)
+        const previousTransaction =
+          this.selectedTransaction?._id === id
+            ? this.selectedTransaction
+            : this.items.find((item) => item._id === id)
+        const transaction = preservePopulatedAgentReferences(
+          await updateTransactionStageRequest(id, payload),
+          previousTransaction,
+        )
 
         this.selectedTransaction = transaction
         this.breakdown = transaction.breakdown
         this.items = this.items.map((item) =>
           item._id === transaction._id ? transaction : item,
         )
+
+        if (this.lastFetchedAt) {
+          this.lastFetchedAt = Date.now()
+        }
 
         return transaction
       } catch (error) {
@@ -138,3 +174,46 @@ export const useTransactionsStore = defineStore('transactions', {
     },
   },
 })
+
+function isCacheFresh(lastFetchedAt: number | null): boolean {
+  return lastFetchedAt !== null && Date.now() - lastFetchedAt < CACHE_TTL_MS
+}
+
+function preservePopulatedAgentReferences(
+  transaction: Transaction,
+  previousTransaction: Transaction | undefined,
+): Transaction {
+  if (!previousTransaction) {
+    return transaction
+  }
+
+  return {
+    ...transaction,
+    listingAgentId: preserveAgentReference(
+      transaction.listingAgentId,
+      previousTransaction.listingAgentId,
+    ),
+    sellingAgentId: preserveAgentReference(
+      transaction.sellingAgentId,
+      previousTransaction.sellingAgentId,
+    ),
+  }
+}
+
+function preserveAgentReference(
+  nextReference: TransactionAgentReference,
+  previousReference: TransactionAgentReference,
+): TransactionAgentReference {
+  if (typeof nextReference !== 'string') {
+    return nextReference
+  }
+
+  if (
+    typeof previousReference !== 'string' &&
+    previousReference._id === nextReference
+  ) {
+    return previousReference
+  }
+
+  return nextReference
+}

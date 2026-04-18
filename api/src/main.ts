@@ -19,19 +19,47 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const port = configService.getOrThrow<number>('PORT');
-  const baseUrl = getBaseUrl(port, configService);
+  const host = configService.getOrThrow<string>('HOST');
+  const baseUrl = getBaseUrl(host, port, configService);
 
-  await app.listen(port);
+  await app.listen(port, host);
 
   Logger.log(`API is running at ${baseUrl}`, 'Bootstrap');
 }
 
 function configureCors(app: INestApplication, configService: ConfigService) {
   const frontendOrigin = configService.get<string>('FRONTEND_ORIGIN');
+  const nodeEnv = configService.get<string>('NODE_ENV');
 
   app.enableCors({
-    origin: frontendOrigin ?? true,
+    origin: createCorsOriginMatcher(frontendOrigin, nodeEnv),
   });
+}
+
+function createCorsOriginMatcher(frontendOrigin?: string, nodeEnv?: string) {
+  const configuredOrigins = parseCorsOrigins(frontendOrigin);
+
+  if (nodeEnv === 'production') {
+    return configuredOrigins.length > 0 ? configuredOrigins : false;
+  }
+
+  const developmentOrigins = [
+    'http://127.0.0.1:3001',
+    'http://localhost:3001',
+  ];
+
+  return Array.from(new Set([...configuredOrigins, ...developmentOrigins]));
+}
+
+function parseCorsOrigins(frontendOrigin?: string) {
+  if (!frontendOrigin) {
+    return [];
+  }
+
+  return frontendOrigin
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 }
 
 function configureGlobalPrefix(
@@ -60,9 +88,14 @@ function configureValidation(app: INestApplication) {
   );
 }
 
-function getBaseUrl(port: number, configService: ConfigService) {
+function getBaseUrl(
+  host: string,
+  port: number,
+  configService: ConfigService,
+) {
   const apiPrefix = configService.get<string>('API_PREFIX');
-  const rootUrl = `http://localhost:${port}`;
+  const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
+  const rootUrl = `http://${displayHost}:${port}`;
 
   return apiPrefix ? `${rootUrl}/${apiPrefix}` : rootUrl;
 }

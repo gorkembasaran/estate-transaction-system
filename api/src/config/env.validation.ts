@@ -6,6 +6,7 @@ type NodeEnvironment = 'development' | 'test' | 'production';
 interface ValidatedEnvironment {
   API_PREFIX?: string;
   FRONTEND_ORIGIN?: string;
+  HOST: string;
   MONGODB_DATABASE: string;
   MONGODB_URI: string;
   NODE_ENV: NodeEnvironment;
@@ -25,6 +26,7 @@ export function validateEnvironment(
   return {
     API_PREFIX: parseApiPrefix(config.API_PREFIX),
     FRONTEND_ORIGIN: parseOptionalString(config.FRONTEND_ORIGIN),
+    HOST: parseOptionalString(config.HOST) ?? '0.0.0.0',
     MONGODB_DATABASE:
       parseOptionalString(config.MONGODB_DATABASE) ?? DEFAULT_DATABASE_NAME,
     MONGODB_URI: mongodbUri ?? LOCAL_MONGODB_URI,
