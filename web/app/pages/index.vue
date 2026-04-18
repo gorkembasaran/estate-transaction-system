@@ -5,17 +5,10 @@ import RecentTransactionsTable from '~/components/transactions/RecentTransaction
 import DashboardStatCard from '~/components/ui/DashboardStatCard.vue'
 import { useAgentsStore } from '~/stores/agents'
 import { useTransactionsStore } from '~/stores/transactions'
-import type { Transaction } from '~/types/transaction'
-import { getCompletedRevenueSummary } from '~/utils/transaction-format'
-
-type MetricTone = 'positive' | 'negative' | 'neutral'
-
-interface DashboardMetric {
-  label: string
-  tone: MetricTone
-}
-
-const metricPeriodInMs = 30 * 24 * 60 * 60 * 1000
+import {
+  getCompletedRevenueSummary,
+  getCompletedTransactionsTrendSummary,
+} from '~/utils/transaction-format'
 
 const agentsStore = useAgentsStore()
 const transactionsStore = useTransactionsStore()
@@ -53,9 +46,12 @@ const revenueSummary = computed(() =>
   getCompletedRevenueSummary(transactions.value),
 )
 const completedTransactionsTrend = computed(() =>
-  getCompletedTransactionsTrend(transactions.value),
+  getCompletedTransactionsTrendSummary(transactions.value),
 )
-const successRateMetric = computed(() => getSuccessRateMetric(successRate.value))
+const completedTransactionsSupportingLabel = computed(
+  () =>
+    `${completedTransactions.value} of ${totalTransactions.value} transactions completed`,
+)
 const recentTransactions = computed(() => transactions.value.slice(0, 5))
 const isLoading = computed(
   () => agentsLoading.value || transactionsLoading.value,
@@ -88,130 +84,6 @@ async function retryDashboard(): Promise<void> {
 onMounted(() => {
   void loadDashboard().catch(() => undefined)
 })
-
-function getCompletedTransactionsTrend(
-  transactions: Transaction[],
-): DashboardMetric {
-  const now = Date.now()
-  const currentPeriodStart = now - metricPeriodInMs
-  const previousPeriodStart = currentPeriodStart - metricPeriodInMs
-
-  let currentPeriodCount = 0
-  let previousPeriodCount = 0
-
-  for (const transaction of transactions) {
-    if (transaction.stage !== 'completed') {
-      continue
-    }
-
-    const completedAt = getTransactionCompletedAt(transaction)
-
-    if (!completedAt) {
-      continue
-    }
-
-    if (completedAt >= currentPeriodStart && completedAt <= now) {
-      currentPeriodCount += 1
-      continue
-    }
-
-    if (
-      completedAt >= previousPeriodStart &&
-      completedAt < currentPeriodStart
-    ) {
-      previousPeriodCount += 1
-    }
-  }
-
-  const percentageChange = getPercentageChange(
-    currentPeriodCount,
-    previousPeriodCount,
-  )
-
-  return {
-    label: formatMetricPercentage(percentageChange),
-    tone: getMetricTone(percentageChange),
-  }
-}
-
-function getTransactionCompletedAt(transaction: Transaction): number | null {
-  const completedHistoryItem = [...transaction.stageHistory]
-    .reverse()
-    .find((historyItem) => historyItem.toStage === 'completed')
-  const completedAt =
-    getTimestamp(completedHistoryItem?.changedAt) ??
-    getTimestamp(transaction.updatedAt) ??
-    getTimestamp(transaction.createdAt)
-
-  return completedAt
-}
-
-function getTimestamp(value: string | undefined): number | null {
-  if (!value) {
-    return null
-  }
-
-  const timestamp = new Date(value).getTime()
-
-  return Number.isNaN(timestamp) ? null : timestamp
-}
-
-function getPercentageChange(current: number, previous: number): number {
-  if (current === 0 && previous === 0) {
-    return 0
-  }
-
-  if (previous === 0) {
-    return 100
-  }
-
-  return Math.round(((current - previous) / previous) * 100)
-}
-
-function formatMetricPercentage(value: number): string {
-  if (value > 0) {
-    return `↑ ${value}%`
-  }
-
-  if (value < 0) {
-    return `↓ ${Math.abs(value)}%`
-  }
-
-  return '0%'
-}
-
-function getMetricTone(value: number): MetricTone {
-  if (value > 0) {
-    return 'positive'
-  }
-
-  if (value < 0) {
-    return 'negative'
-  }
-
-  return 'neutral'
-}
-
-function getSuccessRateMetric(rate: number): DashboardMetric {
-  if (rate >= 35) {
-    return {
-      label: '↑ Excellent',
-      tone: 'positive',
-    }
-  }
-
-  if (rate > 0) {
-    return {
-      label: '→ Building',
-      tone: 'neutral',
-    }
-  }
-
-  return {
-    label: 'No data',
-    tone: 'neutral',
-  }
-}
 </script>
 
 <template>
@@ -246,8 +118,8 @@ function getSuccessRateMetric(rate: number): DashboardMetric {
       />
 
       <DashboardStatCard
-        :corner-metric="completedTransactionsTrend.label"
-        :corner-metric-tone="completedTransactionsTrend.tone"
+        :corner-metric="completedTransactionsTrend?.label"
+        :corner-metric-tone="completedTransactionsTrend?.tone"
         icon="check"
         :is-loading="showSkeletons"
         label="Completed Transactions"
@@ -260,7 +132,7 @@ function getSuccessRateMetric(rate: number): DashboardMetric {
         icon="clock"
         :is-loading="showSkeletons"
         label="Active Transactions"
-        supporting-label="In progress"
+        supporting-label="Not yet completed"
         tone="warning"
         :value="activeTransactions"
       />
@@ -268,7 +140,7 @@ function getSuccessRateMetric(rate: number): DashboardMetric {
       <DashboardStatCard
         icon="users"
         :is-loading="showSkeletons"
-        label="Total Agents"
+        label="Active Agents"
         supporting-label="Available agents"
         :value="agents.length"
       />
@@ -280,6 +152,10 @@ function getSuccessRateMetric(rate: number): DashboardMetric {
         icon="dollar"
         :is-loading="showSkeletons"
         label="Total Revenue"
+        :corner-metric="
+          revenueSummary.hasMultipleCurrencies ? 'Mixed currencies' : undefined
+        "
+        corner-metric-tone="neutral"
         :supporting-label="revenueSummary.supportingLabel"
         tone="accent"
         :value="revenueSummary.value"
@@ -303,11 +179,9 @@ function getSuccessRateMetric(rate: number): DashboardMetric {
         icon="trend"
         :is-loading="showSkeletons"
         label="Success Rate"
-        supporting-label="Completion rate"
+        :supporting-label="completedTransactionsSupportingLabel"
         tone="success"
         :value="`${successRate}%`"
-        :value-metric="successRateMetric.label"
-        :value-metric-tone="successRateMetric.tone"
       />
     </div>
 

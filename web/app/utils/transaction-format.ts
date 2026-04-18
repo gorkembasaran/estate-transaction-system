@@ -30,15 +30,27 @@ const numberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
 })
+const currencySymbolOverrides: Record<string, string> = {
+  TRY: '₺',
+}
+const comparisonPeriodInMs = 30 * 24 * 60 * 60 * 1000
+
+export type MetricTone = 'positive' | 'negative' | 'neutral'
+
+export interface CompletedTransactionsTrendSummary {
+  label: string
+  tone: MetricTone
+}
 
 export interface RevenueSummary {
-  value: string
-  supportingLabel: string
   currencyTotals: Array<{
     amount: number
     currency: string
     formattedAmount: string
   }>
+  hasMultipleCurrencies: boolean
+  supportingLabel: string
+  value: string
 }
 
 export function getTransactionStageLabel(stage: TransactionStage): string {
@@ -100,6 +112,11 @@ export function formatAmountWithCurrency(
   currency: string,
 ): string {
   const normalizedCurrency = currency.toUpperCase()
+  const currencySymbol = currencySymbolOverrides[normalizedCurrency]
+
+  if (currencySymbol) {
+    return `${currencySymbol}${numberFormatter.format(amount)}`
+  }
 
   try {
     return new Intl.NumberFormat('en-US', {
@@ -123,6 +140,7 @@ export function getCompletedRevenueSummary(
   if (completedTransactions.length === 0) {
     return {
       currencyTotals: [],
+      hasMultipleCurrencies: false,
       supportingLabel: 'From 0 completed transactions',
       value: '0',
     }
@@ -149,11 +167,99 @@ export function getCompletedRevenueSummary(
 
   return {
     currencyTotals,
+    hasMultipleCurrencies,
     supportingLabel: `From ${completedTransactions.length} completed transaction${
       completedTransactions.length === 1 ? '' : 's'
     }`,
-    value: hasMultipleCurrencies
-      ? `${currencyTotals.length} currencies`
-      : currencyTotals[0]?.formattedAmount ?? '0',
+    value: currencyTotals[0]?.formattedAmount ?? '0',
   }
+}
+
+export function getCompletedTransactionsTrendSummary(
+  transactions: Transaction[],
+): CompletedTransactionsTrendSummary | null {
+  const now = Date.now()
+  const currentPeriodStart = now - comparisonPeriodInMs
+  const previousPeriodStart = currentPeriodStart - comparisonPeriodInMs
+
+  let currentPeriodCount = 0
+  let previousPeriodCount = 0
+
+  for (const transaction of transactions) {
+    if (transaction.stage !== 'completed') {
+      continue
+    }
+
+    const completedAt = getTransactionCompletedAt(transaction)
+
+    if (!completedAt) {
+      continue
+    }
+
+    if (completedAt >= currentPeriodStart && completedAt <= now) {
+      currentPeriodCount += 1
+      continue
+    }
+
+    if (
+      completedAt >= previousPeriodStart &&
+      completedAt < currentPeriodStart
+    ) {
+      previousPeriodCount += 1
+    }
+  }
+
+  if (currentPeriodCount === 0 && previousPeriodCount === 0) {
+    return null
+  }
+
+  if (previousPeriodCount === 0) {
+    return {
+      label: 'New activity',
+      tone: 'neutral',
+    }
+  }
+
+  const delta = currentPeriodCount - previousPeriodCount
+
+  if (delta > 0) {
+    return {
+      label: `+${delta} vs prev. 30d`,
+      tone: 'positive',
+    }
+  }
+
+  if (delta < 0) {
+    return {
+      label: `${delta} vs prev. 30d`,
+      tone: 'negative',
+    }
+  }
+
+  return {
+    label: 'Stable',
+    tone: 'neutral',
+  }
+}
+
+function getTransactionCompletedAt(transaction: Transaction): number | null {
+  const completedHistoryItem = [...transaction.stageHistory]
+    .reverse()
+    .find((historyItem) => historyItem.toStage === 'completed')
+
+  return (
+    getTimestamp(completedHistoryItem?.changedAt) ??
+    getTimestamp(transaction.updatedAt) ??
+    getTimestamp(transaction.createdAt)
+  )
+}
+
+function getTimestamp(value: string | undefined): number | null {
+  if (!value) {
+    return null
+  }
+
+  const timestamp = new Date(value).getTime()
+
+  return Number.isNaN(timestamp) ? null : timestamp
 }
