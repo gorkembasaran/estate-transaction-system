@@ -8,7 +8,10 @@ import { Model, Types } from 'mongoose';
 import { AgentsService } from '../agents/agents.service';
 import { CommissionService } from './commission.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
-import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
+import {
+  GetTransactionsQueryDto,
+  type TransactionSortField,
+} from './dto/get-transactions-query.dto';
 import { UpdateTransactionStageDto } from './dto/update-transaction-stage.dto';
 import type { TransactionStage } from './enums/transaction-stage.enum';
 import { StageTransitionService } from './stage-transition.service';
@@ -22,6 +25,8 @@ type TransactionListFilter = {
   };
   stage?: TransactionStage;
 };
+
+type TransactionListSort = Partial<Record<TransactionSortField, 1 | -1>>;
 
 @Injectable()
 export class TransactionsService {
@@ -60,13 +65,14 @@ export class TransactionsService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
     const filter = this.buildTransactionFilter(query);
+    const sort = this.buildTransactionSort(query);
 
     const [items, totalItems] = await Promise.all([
       this.transactionModel
         .find(filter)
         .populate('listingAgentId', 'fullName email')
         .populate('sellingAgentId', 'fullName email')
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip(skip)
         .limit(limit)
         .exec(),
@@ -204,6 +210,17 @@ export class TransactionsService {
     }
 
     return createdAtFilter;
+  }
+
+  private buildTransactionSort(
+    query: GetTransactionsQueryDto,
+  ): TransactionListSort {
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortDirection = query.sortOrder === 'asc' ? 1 : -1;
+
+    return {
+      [sortBy]: sortDirection,
+    };
   }
 }
 

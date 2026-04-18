@@ -245,6 +245,8 @@ function normalizeFetchOptions(options: FetchTransactionsOptions): {
       dateFrom: params.dateFrom || undefined,
       dateTo: params.dateTo || undefined,
       search: params.search || undefined,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
       stage: params.stage,
     },
   }
@@ -257,6 +259,8 @@ function createRequestKey(params: GetTransactionsParams): string {
     dateFrom: params.dateFrom ?? '',
     dateTo: params.dateTo ?? '',
     search: params.search ?? '',
+    sortBy: params.sortBy ?? '',
+    sortOrder: params.sortOrder ?? '',
     stage: params.stage ?? '',
   })
 }

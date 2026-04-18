@@ -3,7 +3,11 @@ import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import StageBadge from '~/components/transactions/StageBadge.vue'
 import { useTransactionsStore } from '~/stores/transactions'
-import type { TransactionStage } from '~/types/transaction'
+import type {
+  TransactionSortBy,
+  TransactionSortOrder,
+  TransactionStage,
+} from '~/types/transaction'
 import {
   formatAmountWithCurrency,
   formatDate,
@@ -33,6 +37,8 @@ const dateTo = ref('')
 const dateFromInput = ref<HTMLInputElement | null>(null)
 const dateToInput = ref<HTMLInputElement | null>(null)
 const currentPage = ref(1)
+const sortBy = ref<TransactionSortBy>('createdAt')
+const sortOrder = ref<TransactionSortOrder>('desc')
 const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -93,6 +99,8 @@ async function loadTransactions(forceRefresh = false): Promise<void> {
       limit: pageSize,
       page: currentPage.value,
       search: normalizedSearchQuery.value || undefined,
+      sortBy: sortBy.value,
+      sortOrder: sortOrder.value,
       stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
     })
     .catch(() => undefined)
@@ -153,6 +161,48 @@ function openDatePicker(input: HTMLInputElement | null): void {
 
   input.focus()
   input.click()
+}
+
+function toggleSort(nextSortBy: TransactionSortBy): void {
+  if (sortBy.value === nextSortBy) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = nextSortBy
+    sortOrder.value = 'desc'
+  }
+
+  resetToFirstPageAndLoad()
+}
+
+function getSortIcon(targetSortBy: TransactionSortBy): string {
+  if (sortBy.value !== targetSortBy) {
+    return 'Sort'
+  }
+
+  return sortOrder.value === 'asc' ? 'Asc' : 'Desc'
+}
+
+function getSortAriaSort(
+  targetSortBy: TransactionSortBy,
+): 'ascending' | 'descending' | 'none' {
+  if (sortBy.value !== targetSortBy) {
+    return 'none'
+  }
+
+  return sortOrder.value === 'asc' ? 'ascending' : 'descending'
+}
+
+function getSortButtonLabel(targetSortBy: TransactionSortBy): string {
+  const label =
+    targetSortBy === 'createdAt' ? 'created date' : 'service fee amount'
+
+  if (sortBy.value !== targetSortBy) {
+    return `Sort by ${label}`
+  }
+
+  return `Sort ${label} ${
+    sortOrder.value === 'asc' ? 'descending' : 'ascending'
+  }`
 }
 
 onMounted(() => {
@@ -332,8 +382,40 @@ function resetToFirstPageAndLoad(): void {
               <th>Stage</th>
               <th>Listing Agent</th>
               <th>Selling Agent</th>
-              <th>Service Fee</th>
-              <th>Created Date</th>
+              <th :aria-sort="getSortAriaSort('totalServiceFee')">
+                <button
+                  class="sort-header-button"
+                  type="button"
+                  :aria-label="getSortButtonLabel('totalServiceFee')"
+                  @click="toggleSort('totalServiceFee')"
+                >
+                  <span>Service Fee</span>
+                  <span
+                    class="sort-indicator"
+                    :class="{ 'is-active': sortBy === 'totalServiceFee' }"
+                    aria-hidden="true"
+                  >
+                    {{ getSortIcon('totalServiceFee') }}
+                  </span>
+                </button>
+              </th>
+              <th :aria-sort="getSortAriaSort('createdAt')">
+                <button
+                  class="sort-header-button"
+                  type="button"
+                  :aria-label="getSortButtonLabel('createdAt')"
+                  @click="toggleSort('createdAt')"
+                >
+                  <span>Created Date</span>
+                  <span
+                    class="sort-indicator"
+                    :class="{ 'is-active': sortBy === 'createdAt' }"
+                    aria-hidden="true"
+                  >
+                    {{ getSortIcon('createdAt') }}
+                  </span>
+                </button>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -752,6 +834,47 @@ function resetToFirstPageAndLoad(): void {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.sort-header-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  letter-spacing: inherit;
+  padding: 0;
+  text-align: left;
+  text-transform: inherit;
+}
+
+.sort-header-button:hover {
+  color: #4f46e5;
+}
+
+.sort-header-button:focus-visible {
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgb(79 70 229 / 0.14);
+  outline: 0;
+}
+
+.sort-indicator {
+  background: #eef2ff;
+  border-radius: 999px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 4px 7px;
+  text-transform: none;
+}
+
+.sort-indicator.is-active {
+  background: #4f46e5;
+  color: #ffffff;
 }
 
 .transactions-table td {

@@ -367,6 +367,21 @@ describe('TransactionsService', () => {
     );
   });
 
+  it('applies requested sorting when listing transactions', async () => {
+    const query = createFindQuery([]);
+    transactionModel.find.mockReturnValue(query);
+    transactionModel.countDocuments.mockReturnValue(createCountQuery(0));
+
+    await service.getAllTransactions({
+      limit: 10,
+      page: 1,
+      sortBy: 'totalServiceFee',
+      sortOrder: 'asc',
+    });
+
+    expect(query.sort).toHaveBeenCalledWith({ totalServiceFee: 1 });
+  });
+
   it('throws BadRequestException when date range is invalid', async () => {
     await expect(
       service.getAllTransactions({

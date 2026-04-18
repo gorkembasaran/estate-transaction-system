@@ -53,12 +53,17 @@ export interface UpdateTransactionStagePayload {
   stage: TransactionStage
 }
 
+export type TransactionSortBy = 'createdAt' | 'totalServiceFee'
+export type TransactionSortOrder = 'asc' | 'desc'
+
 export interface GetTransactionsParams {
   dateFrom?: string
   dateTo?: string
   limit?: number
   page?: number
   search?: string
+  sortBy?: TransactionSortBy
+  sortOrder?: TransactionSortOrder
   stage?: TransactionStage
 }
 

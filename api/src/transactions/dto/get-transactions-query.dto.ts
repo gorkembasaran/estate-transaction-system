@@ -11,6 +11,12 @@ import {
 import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
 import type { TransactionStage } from '../enums/transaction-stage.enum';
 
+export const TRANSACTION_SORT_FIELDS = ['createdAt', 'totalServiceFee'] as const;
+export const SORT_ORDERS = ['asc', 'desc'] as const;
+
+export type TransactionSortField = (typeof TRANSACTION_SORT_FIELDS)[number];
+export type SortOrder = (typeof SORT_ORDERS)[number];
+
 export class GetTransactionsQueryDto {
   @Type(() => Number)
   @IsInt()
@@ -47,4 +53,12 @@ export class GetTransactionsQueryDto {
   @IsDateString()
   @IsOptional()
   dateTo?: string;
+
+  @IsIn(TRANSACTION_SORT_FIELDS)
+  @IsOptional()
+  sortBy?: TransactionSortField = 'createdAt';
+
+  @IsIn(SORT_ORDERS)
+  @IsOptional()
+  sortOrder?: SortOrder = 'desc';
 }
