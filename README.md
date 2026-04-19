@@ -1,37 +1,32 @@
 # Estate Transaction System
 
-Full-stack technical case repository for managing estate transactions, transaction lifecycle stages, and commission breakdowns.
+Full-stack technical case project for managing real estate transactions, transaction lifecycle stages, and commission breakdowns.
 
-The repository contains a NestJS backend under `api/` and a Nuxt 3 frontend workspace under `web/`. The backend core implementation is complete for the current case scope. The frontend setup has started, but functional pages, components, and documented UI behavior are still in progress.
+The repository contains a NestJS backend under `api/` and a Nuxt 3 frontend under `web/`. The backend implements the core domain logic, persistence, validation, and service-layer tests. The frontend is implemented to a usable degree with dashboard, transaction, and agent management flows connected to the backend API.
 
-## Current Phase
-
-- Backend core implementation is complete for the current case scope.
-- Backend service-layer tests are implemented.
-- Backend business-logic coverage is strong and intentionally service-focused.
-- Frontend setup has started with Nuxt 3, but functional UI implementation is still in progress.
-- Deployment is not completed yet.
-
-## Current Status
+## Current Project Status
 
 Backend:
 
 - Implemented under `api/`
 - Agents and transactions modules are available
 - Transaction lifecycle and commission rules are implemented
-- MongoDB / Mongoose integration is configured
-- Jest unit tests cover backend business logic
+- MongoDB / Mongoose persistence is configured
+- Pagination, filtering, search, and sorting are supported where currently needed
+- Jest service-layer tests cover the core backend business logic
 
 Frontend:
 
-- Initialized under `web/`
-- Nuxt 3 setup has started
-- Functional pages, components, state management, and documented UI behavior are still pending
+- Implemented under `web/`
+- Nuxt 3 app shell, routing, Pinia stores, typed services, and Axios plugin are available
+- Usable dashboard, transactions, and agents pages exist
+- Create/edit flows are implemented for the currently supported API surface
+- Dark/light theme support is implemented
 
 Deployment:
 
 - Not completed
-- No live API or frontend URL is available at the current stage
+- No live API URL or live frontend URL is documented in this repository yet
 
 ## Tech Stack
 
@@ -46,26 +41,60 @@ Backend:
 
 Frontend:
 
-- Nuxt 3 initialized
-- Functional frontend implementation pending
+- Nuxt 3
+- TypeScript
+- Pinia
+- Axios
+- Tailwind CSS module is installed, with most page styling currently handled through app-level CSS and Vue component styles
 
-## Business Rules Summary
+## Core Business Rules
 
-The backend enforces a strict transaction lifecycle:
+Transactions always start in the `agreement` stage.
+
+Valid lifecycle:
 
 ```text
 agreement -> earnest_money -> title_deed -> completed
 ```
 
-Transactions always start in `agreement`, and transitions after `completed` are rejected.
+Invalid transitions are rejected. Once a transaction reaches `completed`, no further stage transitions are allowed.
 
 Commission rules:
 
 - 50% of the service fee belongs to the agency
 - 50% is the agent pool
-- same listing and selling agent receives the full agent pool
-- different listing and selling agents split the agent pool equally
-- financial breakdown is calculated when the transaction reaches `completed`
+- if the listing and selling agent are the same person, that agent receives the full agent pool
+- if the listing and selling agents are different, they split the agent pool equally
+- the financial breakdown is stored when the transaction reaches `completed`
+- stage history is recorded inside the transaction document
+
+## Current Implemented Features
+
+Backend:
+
+- Create, list, retrieve, and update agents
+- Create, list, retrieve, and update transaction stages
+- Retrieve transaction financial breakdowns
+- Validate agent existence before transaction creation
+- Enforce strict transaction stage transitions
+- Calculate commission breakdowns
+- Store embedded stage history and financial breakdowns
+- Paginate, search, filter, and sort backend list endpoints
+- Handle validation, duplicate email, invalid id, not found, invalid transition, and negative fee errors
+- Service-layer unit tests for agents, transactions, commission, and stage transition logic
+
+Frontend:
+
+- Dashboard page with transaction, agent, success-rate, revenue, and recent activity summaries
+- Transactions list with backend pagination, filtering, date range filtering, and sorting
+- Transaction detail page with stage history, stage update flow, and financial breakdown display
+- Create transaction page
+- Agents list with backend pagination, search, and status filtering
+- Create agent page
+- Edit agent page
+- Async active-agent search in the create transaction flow
+- Query-aware list refresh after create/update mutations to keep paginated and filtered results consistent with backend query results
+- Shared transaction stage badges, formatting helpers, and store error handling
 
 ## Project Structure
 
@@ -79,6 +108,8 @@ estate-transaction-system/
 │   └── README.md
 ├── web/
 │   ├── app/
+│   ├── assets/
+│   ├── public/
 │   ├── nuxt.config.ts
 │   ├── package.json
 │   └── README.md
@@ -88,13 +119,11 @@ estate-transaction-system/
 
 ## Requirements
 
-- Node.js (recommended LTS version)
+- Node.js, recommended LTS version
 - npm
 - MongoDB local instance or MongoDB Atlas connection
 
 ## Backend Quick Start
-
-The backend is the currently usable part of the project.
 
 ```bash
 cd api
@@ -109,37 +138,44 @@ Default backend URL:
 http://localhost:3000
 ```
 
-The backend expects MongoDB to be available locally or through a configured MongoDB Atlas connection string. See `api/README.md` for full backend setup and environment details.
+The backend expects MongoDB to be available locally or through a configured MongoDB Atlas connection string. Full backend setup details are documented in `api/README.md`.
 
-## Backend Tests
-
-From the `api/` directory:
+## Frontend Quick Start
 
 ```bash
-npm run test
-npm run test:cov
+cd web
+npm install
+npm run dev
 ```
 
-Coverage is intentionally focused on backend service files:
+The frontend reads the API base URL from `NUXT_PUBLIC_API_BASE` when provided. If it is not set, the Nuxt config currently defaults to:
 
 ```text
-src/agents/**/*.service.ts
-src/transactions/**/*.service.ts
+http://127.0.0.1:3000
 ```
 
-Detailed coverage rationale is documented in `api/README.md` and `DESIGN.md`.
+The frontend is expected to run against the local backend during development.
+
+## Available Application Areas
+
+- Dashboard
+- Transactions list
+- Create transaction
+- Transaction detail and stage update
+- Agents list
+- Create agent
+- Edit agent
 
 ## API Overview
 
-The following endpoints represent the currently available backend API surface.
-
-Routes are unprefixed by default. If `API_PREFIX` is configured, the prefix is added before these routes.
+Routes are unprefixed by default. If `API_PREFIX` is configured in the backend, the prefix is added before these routes.
 
 Agents:
 
 - `POST /agents`
 - `GET /agents`
 - `GET /agents/:id`
+- `PATCH /agents/:id`
 
 Transactions:
 
@@ -149,29 +185,68 @@ Transactions:
 - `PATCH /transactions/:id/stage`
 - `GET /transactions/:id/breakdown`
 
-## Frontend Status
+All list endpoints support pagination parameters:
 
-The frontend workspace has been initialized with Nuxt 3 under `web/`.
+- `page`
+- `limit`
 
-Current frontend status:
+## Data Model Overview
 
-- setup has started
-- implementation is in progress
-- functional pages and components are pending
-- frontend state management and documented UI behavior are pending
+Main entities:
 
-Frontend details will be documented after functional implementation exists.
+Agent:
+
+- fullName
+- email
+- isActive
+- createdAt
+
+Transaction:
+
+- propertyTitle
+- currency
+- totalServiceFee
+- stage
+- listingAgentId
+- sellingAgentId
+- stageHistory
+- breakdown (stored after completion)
+
+Notes:
+
+- Transactions reference agents using ObjectId references.
+- Agent summaries are populated when listing transactions.
+
+## Testing
+
+Backend service-layer tests exist under `api/src`.
+
+From the `api/` directory:
+
+```bash
+npm run test
+npm run test:cov
+```
+
+Coverage is intentionally focused on backend business-logic service files:
+
+```text
+src/agents/**/*.service.ts
+src/transactions/**/*.service.ts
+```
+
+Frontend automated tests are not currently documented in this repository.
 
 ## Documentation Map
 
-- `README.md` -> repository overview and implementation status
+- `README.md` -> repository overview and current implementation status
 - `api/README.md` -> backend setup, commands, endpoints, and backend-specific usage
 - `DESIGN.md` -> architectural decisions, data modeling rationale, lifecycle design, and testing strategy
+- `web/README.md` -> frontend setup and usage notes
 
-## Future Work Overview
+## Current Limitations / Notes
 
-- frontend functional implementation
-- integration and e2e testing
-- deployment setup
-- optional API documentation generation
-- potential pagination and filtering support
+- Deployment is not completed and no live URLs are documented.
+- Dashboard revenue is intentionally based on loaded completed transaction results, not a dedicated backend aggregate endpoint.
+- Frontend and backend documentation are maintained separately; some detailed docs may need follow-up updates as implementation evolves.
+- Swagger, Docker, authentication, CI/CD, and seed scripts are not currently documented as implemented features.
