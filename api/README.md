@@ -437,7 +437,7 @@ Use `.env.example` as the starting point.
 | `NODE_ENV` | no | `development` | Must be `development`, `test`, or `production` |
 | `HOST` | no | `0.0.0.0` | Host used by `app.listen` |
 | `PORT` | no | `3000` | Must be a valid TCP port |
-| `FRONTEND_ORIGIN` | no | none | Comma-separated CORS origins |
+| `FRONTEND_ORIGIN` | no | none | Comma-separated CORS origins; trailing slashes are normalized |
 | `API_PREFIX` | no | none | Optional global route prefix; leading/trailing slashes are trimmed |
 | `MONGODB_URI` | production only | `mongodb://127.0.0.1:27017` | Required when `NODE_ENV=production` |
 | `MONGODB_DATABASE` | no | `estate_transaction_system` | Database name passed to Mongoose |
@@ -450,6 +450,14 @@ http://localhost:3001
 ```
 
 In production, CORS is disabled unless `FRONTEND_ORIGIN` is configured.
+
+Production deployments should set `FRONTEND_ORIGIN` to the deployed frontend origin:
+
+```text
+FRONTEND_ORIGIN=https://your-frontend-domain.example.com
+```
+
+Multiple allowed origins can be provided as a comma-separated list.
 
 ## Installation
 
@@ -588,7 +596,7 @@ The following are not currently implemented in this backend:
 - Swagger/OpenAPI generation
 - Docker configuration
 - CI/CD configuration
-- deployment documentation or live backend URL
+- deployment runbook
 - seed scripts
 - dedicated dashboard aggregate endpoint
 - implemented e2e test specs

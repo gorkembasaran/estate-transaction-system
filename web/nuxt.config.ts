@@ -1,5 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
+const defaultApiBase = 'http://127.0.0.1:3000'
+
 const themeInitScript = `
 (function () {
   try {
@@ -66,9 +68,7 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase:
-        process.env.NUXT_PUBLIC_API_BASE ||
-        'http://127.0.0.1:3000',
+      apiBase: defaultApiBase,
     },
   },
 })

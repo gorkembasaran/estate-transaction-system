@@ -59,6 +59,7 @@ function parseCorsOrigins(frontendOrigin?: string) {
   return frontendOrigin
     .split(',')
     .map((origin) => origin.trim())
+    .map((origin) => origin.replace(/\/+$/g, ''))
     .filter(Boolean);
 }
 
