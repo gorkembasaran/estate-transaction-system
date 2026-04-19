@@ -46,7 +46,10 @@ onMounted(() => {
     <aside class="app-sidebar" aria-label="Application navigation">
       <div class="sidebar-brand">
         <div class="sidebar-brand__top">
-          <NuxtLink to="/" class="brand">Estate Manager</NuxtLink>
+          <div class="sidebar-brand__copy">
+            <NuxtLink to="/" class="brand">Estate Manager</NuxtLink>
+            <span>Transaction System</span>
+          </div>
           <button
             class="theme-toggle"
             type="button"
@@ -72,7 +75,6 @@ onMounted(() => {
             </span>
           </button>
         </div>
-        <span>Transaction System</span>
       </div>
 
       <nav class="nav-links" aria-label="Primary navigation">

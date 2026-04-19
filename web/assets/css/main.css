@@ -37,14 +37,18 @@ a {
 
 .sidebar-brand {
   border-bottom: 1px solid #edf0f3;
-  padding: 26px 24px 28px;
+  padding: 24px 22px 26px;
 }
 
 .sidebar-brand__top {
-  align-items: center;
+  align-items: flex-start;
   display: flex;
-  gap: 12px;
+  gap: 16px;
   justify-content: space-between;
+}
+
+.sidebar-brand__copy {
+  min-width: 0;
 }
 
 .brand {
@@ -56,7 +60,7 @@ a {
   line-height: 1.1;
 }
 
-.sidebar-brand span {
+.sidebar-brand__copy span {
   color: #6b7280;
   display: block;
   font-size: 14px;
@@ -106,50 +110,52 @@ a {
 
 .theme-toggle {
   align-items: center;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border: 1px solid #d9dee8;
   border-radius: 999px;
-  color: #374151;
+  color: #64748b;
   cursor: pointer;
-  display: inline-flex;
-  flex: 0 0 auto;
+  display: grid;
+  flex: 0 0 38px;
   font: inherit;
-  height: 36px;
+  height: 38px;
   justify-content: center;
   line-height: 0;
   min-height: 0;
   padding: 0;
+  place-items: center;
   transition:
     background-color 0.16s ease,
+    box-shadow 0.16s ease,
     border-color 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s ease;
-  width: 36px;
+    color 0.16s ease;
+  width: 38px;
 }
 
 .theme-toggle:hover {
-  background: #f8fafc;
+  background: #ffffff;
   border-color: #c7d2fe;
   color: #4f46e5;
-  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgb(79 70 229 / 0.12);
 }
 
 .theme-toggle__icon {
   color: currentColor;
   display: grid;
-  height: 18px;
+  height: 20px;
   place-items: center;
-  width: 18px;
+  width: 20px;
 }
 
 .theme-toggle__icon svg {
   display: block;
-  height: 18px;
-  width: 18px;
+  height: 19px;
+  overflow: visible;
+  width: 19px;
 }
 
 .theme-toggle__moon {
-  transform: translate(1.5px, -1px);
+  transform: none;
 }
 
 .theme-toggle__icon svg * {
@@ -257,7 +263,7 @@ a {
     font-size: 24px;
   }
 
-  .sidebar-brand span {
+  .sidebar-brand__copy span {
     margin-top: 8px;
   }
 
@@ -352,6 +358,8 @@ html[data-theme='dark'] .recent-transactions__header h2,
 html[data-theme='dark'] .info-card dd,
 html[data-theme='dark'] .stage-timeline strong,
 html[data-theme='dark'] .breakdown-card strong,
+html[data-theme='dark'] .stat-card__value,
+html[data-theme='dark'] .stat-card__value-metric,
 html[data-theme='dark'] .form-field input,
 html[data-theme='dark'] .form-field select,
 html[data-theme='dark'] .agent-combobox-copy strong,
@@ -359,7 +367,7 @@ html[data-theme='dark'] .agent-option strong {
   color: #f8fafc !important;
 }
 
-html[data-theme='dark'] .sidebar-brand span,
+html[data-theme='dark'] .sidebar-brand__copy span,
 html[data-theme='dark'] .page-section p,
 html[data-theme='dark'] .dashboard-header p,
 html[data-theme='dark'] .transactions-header p,
@@ -377,6 +385,8 @@ html[data-theme='dark'] .stage-timeline time,
 html[data-theme='dark'] .breakdown-card span,
 html[data-theme='dark'] .breakdown-card p,
 html[data-theme='dark'] .breakdown-card small,
+html[data-theme='dark'] .stat-card__label,
+html[data-theme='dark'] .stat-card__support,
 html[data-theme='dark'] .date-field-label,
 html[data-theme='dark'] .agent-combobox-copy span,
 html[data-theme='dark'] .agent-option small,
@@ -418,6 +428,13 @@ html[data-theme='dark'] .pagination-bar button,
 html[data-theme='dark'] .agents-pagination button {
   background: #0f172a !important;
   border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .theme-toggle:hover {
+  background: #111827 !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 8px 20px rgb(99 102 241 / 0.18) !important;
+  color: #c7d2fe !important;
 }
 
 html[data-theme='dark'] .search-field input,

@@ -8,7 +8,6 @@ import {
 import type {
   Agent,
   AgentPaginationMeta,
-  AgentStatusFilter,
   CreateAgentPayload,
   GetAgentsParams,
   UpdateAgentPayload,
@@ -29,7 +28,7 @@ interface AgentsState {
   error: string | null
   lastFetchedAt: number | null
   lastFetchKey: string | null
-  lastFetchStatus: AgentStatusFilter
+  lastFetchParams: GetAgentsParams | null
   pagination: AgentPaginationMeta
 }
 
@@ -43,7 +42,7 @@ export const useAgentsStore = defineStore('agents', {
     error: null,
     lastFetchedAt: null,
     lastFetchKey: null,
-    lastFetchStatus: 'all',
+    lastFetchParams: null,
     pagination: {
       hasNextPage: false,
       hasPreviousPage: false,
@@ -83,7 +82,7 @@ export const useAgentsStore = defineStore('agents', {
           this.pagination = response.meta
           this.lastFetchedAt = Date.now()
           this.lastFetchKey = requestKey
-          this.lastFetchStatus = params.status ?? 'all'
+          this.lastFetchParams = cloneFetchParams(params)
         } catch (error) {
           this.error = getStoreErrorMessage(error)
           throw error
@@ -129,22 +128,8 @@ export const useAgentsStore = defineStore('agents', {
       try {
         const agent = await createAgentRequest(payload)
 
-        if (isAgentVisibleForStatus(agent, this.lastFetchStatus)) {
-          this.items = [agent, ...this.items]
-          this.pagination = {
-            ...this.pagination,
-            totalItems: this.pagination.totalItems + 1,
-            totalPages: Math.ceil(
-              (this.pagination.totalItems + 1) / this.pagination.limit,
-            ),
-          }
-        }
-
         this.selectedAgent = agent
-
-        if (this.lastFetchedAt) {
-          this.lastFetchedAt = Date.now()
-        }
+        await this.refreshLastFetchedList()
 
         return agent
       } catch (error) {
@@ -161,40 +146,9 @@ export const useAgentsStore = defineStore('agents', {
 
       try {
         const agent = await updateAgentRequest(id, payload)
-        const wasVisible = this.items.some((item) => item._id === id)
 
         this.selectedAgent = agent
-
-        if (isAgentVisibleForStatus(agent, this.lastFetchStatus)) {
-          this.items = wasVisible
-            ? this.items.map((item) => (item._id === id ? agent : item))
-            : [agent, ...this.items]
-
-          if (!wasVisible) {
-            this.pagination = {
-              ...this.pagination,
-              totalItems: this.pagination.totalItems + 1,
-              totalPages: Math.ceil(
-                (this.pagination.totalItems + 1) / this.pagination.limit,
-              ),
-            }
-          }
-        } else {
-          this.items = this.items.filter((item) => item._id !== id)
-
-          if (wasVisible) {
-            const totalItems = Math.max(this.pagination.totalItems - 1, 0)
-            this.pagination = {
-              ...this.pagination,
-              totalItems,
-              totalPages: Math.ceil(totalItems / this.pagination.limit),
-            }
-          }
-        }
-
-        if (this.lastFetchedAt) {
-          this.lastFetchedAt = Date.now()
-        }
+        await this.refreshLastFetchedList()
 
         return agent
       } catch (error) {
@@ -203,6 +157,23 @@ export const useAgentsStore = defineStore('agents', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    async refreshLastFetchedList(): Promise<void> {
+      const params = this.lastFetchParams
+        ? cloneFetchParams(this.lastFetchParams)
+        : null
+
+      this.lastFetchedAt = null
+
+      if (!params) {
+        return
+      }
+
+      await this.fetchAgents({
+        ...params,
+        forceRefresh: true,
+      }).catch(() => undefined)
     },
   },
 })
@@ -248,17 +219,11 @@ function createRequestKey(params: GetAgentsParams): string {
   })
 }
 
-function isAgentVisibleForStatus(
-  agent: Agent,
-  status: AgentStatusFilter,
-): boolean {
-  if (status === 'active') {
-    return agent.isActive
+function cloneFetchParams(params: GetAgentsParams): GetAgentsParams {
+  return {
+    limit: params.limit,
+    page: params.page,
+    search: params.search,
+    status: params.status,
   }
-
-  if (status === 'inactive') {
-    return !agent.isActive
-  }
-
-  return true
 }
