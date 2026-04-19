@@ -16,57 +16,6 @@ a {
   text-decoration: none;
 }
 
-.form-skeleton {
-  display: grid;
-  gap: 18px;
-}
-
-.form-skeleton__field {
-  display: grid;
-  gap: 8px;
-}
-
-.form-skeleton__line,
-.form-skeleton__input,
-.form-skeleton__button {
-  animation: skeleton-pulse 1.25s ease-in-out infinite;
-  background: #e5e7eb;
-  border-radius: 8px;
-  display: block;
-}
-
-.form-skeleton__line {
-  height: 14px;
-  width: min(180px, 42%);
-}
-
-.form-skeleton__input {
-  height: 48px;
-  width: 100%;
-}
-
-.form-skeleton__actions {
-  display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(0, 1fr) 110px;
-  margin-top: 10px;
-}
-
-.form-skeleton__button {
-  height: 46px;
-}
-
-@keyframes skeleton-pulse {
-  0%,
-  100% {
-    opacity: 0.64;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
 .app-shell {
   background: #f8fafc;
   min-height: 100vh;
@@ -169,7 +118,7 @@ a {
   justify-content: center;
   line-height: 0;
   min-height: 0;
-  padding-bottom: 10px;
+  padding: 0;
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
@@ -435,15 +384,6 @@ html[data-theme='dark'] .checkbox-copy small {
   color: #94a3b8 !important;
 }
 
-html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__value {
-  color: #f8fafc !important;
-}
-
-html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__label,
-html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__support {
-  color: #cbd5e1 !important;
-}
-
 html[data-theme='dark'] .nav-links a,
 html[data-theme='dark'] .theme-toggle,
 html[data-theme='dark'] .secondary-button,
@@ -499,9 +439,6 @@ html[data-theme='dark'] .agent-result-note,
 html[data-theme='dark'] .form-loading,
 html[data-theme='dark'] .form-note,
 html[data-theme='dark'] .breakdown-empty,
-html[data-theme='dark'] .form-skeleton__line,
-html[data-theme='dark'] .form-skeleton__input,
-html[data-theme='dark'] .form-skeleton__button,
 html[data-theme='dark'] .detail-skeleton-card span,
 html[data-theme='dark'] .detail-skeleton-card small,
 html[data-theme='dark'] .table-skeleton {

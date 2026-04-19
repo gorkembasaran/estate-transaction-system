@@ -3,6 +3,7 @@ import {
   createTransaction as createTransactionRequest,
   getTransactionBreakdown,
   getTransactionById,
+  getTransactionCount,
   getTransactions,
   updateTransactionStage as updateTransactionStageRequest,
 } from '~/services/transaction.service'
@@ -101,6 +102,17 @@ export const useTransactionsStore = defineStore('transactions', {
       })()
 
       return fetchTransactionsPromise
+    },
+
+    async fetchTransactionCount(
+      params: GetTransactionsParams = {},
+    ): Promise<number> {
+      try {
+        return await getTransactionCount(params)
+      } catch (error) {
+        this.error = getStoreErrorMessage(error)
+        throw error
+      }
     },
 
     async fetchTransactionById(id: string): Promise<void> {

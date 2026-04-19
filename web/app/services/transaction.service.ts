@@ -39,6 +39,18 @@ export async function getTransactions(
   }
 }
 
+export async function getTransactionCount(
+  params?: GetTransactionsParams,
+): Promise<number> {
+  const response = await getTransactions({
+    ...params,
+    limit: 1,
+    page: 1,
+  })
+
+  return response.meta.totalItems
+}
+
 export async function getTransactionById(id: string): Promise<Transaction> {
   const { data } = await getApiClient().get<Transaction>(`/transactions/${id}`)
 

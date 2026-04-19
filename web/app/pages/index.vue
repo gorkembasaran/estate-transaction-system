@@ -5,14 +5,15 @@ import RecentTransactionsTable from '~/components/transactions/RecentTransaction
 import DashboardStatCard from '~/components/ui/DashboardStatCard.vue'
 import { useAgentsStore } from '~/stores/agents'
 import { useTransactionsStore } from '~/stores/transactions'
+import type { Transaction } from '~/types/transaction'
 import {
   getCompletedRevenueSummary,
-  getCompletedTransactionsTrendSummary,
 } from '~/utils/transaction-format'
 
 const agentsStore = useAgentsStore()
 const transactionsStore = useTransactionsStore()
 const hasCompletedInitialLoad = ref(false)
+const completedTransactionsCount = ref(0)
 
 const {
   error: agentsError,
@@ -24,16 +25,15 @@ const {
   error: transactionsError,
   isLoading: transactionsLoading,
   items: transactions,
+  pagination: transactionsPagination,
 } = storeToRefs(transactionsStore)
 
-const totalTransactions = computed(() => transactions.value.length)
-const completedTransactions = computed(
-  () =>
-    transactions.value.filter((transaction) => transaction.stage === 'completed')
-      .length,
+const totalTransactions = computed(
+  () => transactionsPagination.value.totalItems,
 )
+const completedTransactions = computed(() => completedTransactionsCount.value)
 const activeTransactions = computed(
-  () => totalTransactions.value - completedTransactions.value,
+  () => Math.max(totalTransactions.value - completedTransactions.value, 0),
 )
 const successRate = computed(() => {
   if (totalTransactions.value === 0) {
@@ -45,10 +45,7 @@ const successRate = computed(() => {
   )
 })
 const revenueSummary = computed(() =>
-  getCompletedRevenueSummary(transactions.value),
-)
-const completedTransactionsTrend = computed(() =>
-  getCompletedTransactionsTrendSummary(transactions.value),
+  getLoadedCompletedRevenueSummary(transactions.value),
 )
 const completedTransactionsSupportingLabel = computed(
   () =>
@@ -74,12 +71,30 @@ const showSkeletons = computed(
 async function loadDashboard(forceRefresh = false): Promise<void> {
   try {
     const results = await Promise.allSettled([
-      transactionsStore.fetchTransactions(forceRefresh),
+      transactionsStore.fetchTransactions({
+        forceRefresh,
+        limit: 100,
+        page: 1,
+        sortBy: 'updatedAt',
+        sortOrder: 'desc',
+      }),
+      transactionsStore.fetchTransactionCount({
+        stage: 'completed',
+      }),
       agentsStore.fetchAgents({
         forceRefresh,
         status: 'active',
       }),
     ])
+
+    const completedCountResult = results[1]
+
+    if (
+      completedCountResult.status === 'fulfilled' &&
+      typeof completedCountResult.value === 'number'
+    ) {
+      completedTransactionsCount.value = completedCountResult.value
+    }
 
     const rejectedResult = results.find((result) => result.status === 'rejected')
 
@@ -98,6 +113,20 @@ async function retryDashboard(): Promise<void> {
 onMounted(() => {
   void loadDashboard().catch(() => undefined)
 })
+
+function getLoadedCompletedRevenueSummary(transactionsValue: Transaction[]) {
+  const summary = getCompletedRevenueSummary(transactionsValue)
+  const loadedCompletedCount = transactionsValue.filter(
+    (transaction) => transaction.stage === 'completed',
+  ).length
+
+  return {
+    ...summary,
+    supportingLabel: `From ${loadedCompletedCount} loaded completed transaction${
+      loadedCompletedCount === 1 ? '' : 's'
+    }`,
+  }
+}
 </script>
 
 <template>
@@ -132,8 +161,6 @@ onMounted(() => {
       />
 
       <DashboardStatCard
-        :corner-metric="completedTransactionsTrend?.label"
-        :corner-metric-tone="completedTransactionsTrend?.tone"
         icon="check"
         :is-loading="showSkeletons"
         label="Completed Transactions"
@@ -165,7 +192,7 @@ onMounted(() => {
         class="dashboard-revenue-card"
         icon="dollar"
         :is-loading="showSkeletons"
-        label="Total Revenue"
+        label="Completed Revenue (Loaded Results)"
         :corner-metric="
           revenueSummary.hasMultipleCurrencies ? 'Mixed currencies' : undefined
         "
