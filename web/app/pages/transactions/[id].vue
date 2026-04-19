@@ -13,6 +13,7 @@ import {
   formatAmountWithCurrency,
   formatDate,
   formatDateTime,
+  getAgentEditPath,
   getAgentDisplayEmail,
   getAgentDisplayName,
   getTransactionStageLabel,
@@ -225,7 +226,16 @@ onMounted(() => {
             <div>
               <dt>Listing Agent</dt>
               <dd>
-                {{ getAgentDisplayName(transaction.listingAgentId) }}
+                <NuxtLink
+                  v-if="getAgentEditPath(transaction.listingAgentId)"
+                  class="agent-detail-link"
+                  :to="getAgentEditPath(transaction.listingAgentId) || '/'"
+                >
+                  {{ getAgentDisplayName(transaction.listingAgentId) }}
+                </NuxtLink>
+                <strong v-else>
+                  {{ getAgentDisplayName(transaction.listingAgentId) }}
+                </strong>
                 <span>{{ getAgentDisplayEmail(transaction.listingAgentId) }}</span>
               </dd>
             </div>
@@ -233,7 +243,16 @@ onMounted(() => {
             <div>
               <dt>Selling Agent</dt>
               <dd>
-                {{ getAgentDisplayName(transaction.sellingAgentId) }}
+                <NuxtLink
+                  v-if="getAgentEditPath(transaction.sellingAgentId)"
+                  class="agent-detail-link"
+                  :to="getAgentEditPath(transaction.sellingAgentId) || '/'"
+                >
+                  {{ getAgentDisplayName(transaction.sellingAgentId) }}
+                </NuxtLink>
+                <strong v-else>
+                  {{ getAgentDisplayName(transaction.sellingAgentId) }}
+                </strong>
                 <span>{{ getAgentDisplayEmail(transaction.sellingAgentId) }}</span>
               </dd>
             </div>
@@ -321,7 +340,18 @@ onMounted(() => {
                 )
               }}
             </strong>
-            <p>{{ getAgentDisplayName(transaction.listingAgentId) }}</p>
+            <p>
+              <NuxtLink
+                v-if="getAgentEditPath(transaction.listingAgentId)"
+                class="breakdown-agent-link"
+                :to="getAgentEditPath(transaction.listingAgentId) || '/'"
+              >
+                {{ getAgentDisplayName(transaction.listingAgentId) }}
+              </NuxtLink>
+              <span v-else>
+                {{ getAgentDisplayName(transaction.listingAgentId) }}
+              </span>
+            </p>
             <small>{{ breakdown.listingAgentReason }}</small>
           </article>
 
@@ -335,7 +365,18 @@ onMounted(() => {
                 )
               }}
             </strong>
-            <p>{{ getAgentDisplayName(transaction.sellingAgentId) }}</p>
+            <p>
+              <NuxtLink
+                v-if="getAgentEditPath(transaction.sellingAgentId)"
+                class="breakdown-agent-link"
+                :to="getAgentEditPath(transaction.sellingAgentId) || '/'"
+              >
+                {{ getAgentDisplayName(transaction.sellingAgentId) }}
+              </NuxtLink>
+              <span v-else>
+                {{ getAgentDisplayName(transaction.sellingAgentId) }}
+              </span>
+            </p>
             <small>{{ breakdown.sellingAgentReason }}</small>
           </article>
         </div>
@@ -515,6 +556,17 @@ onMounted(() => {
   font-size: 15px;
   font-weight: 600;
   margin-top: 6px;
+}
+
+.agent-detail-link,
+.breakdown-agent-link {
+  color: #4f46e5;
+  font-weight: 800;
+}
+
+.agent-detail-link:hover,
+.breakdown-agent-link:hover {
+  color: #312e81;
 }
 
 .stage-timeline {

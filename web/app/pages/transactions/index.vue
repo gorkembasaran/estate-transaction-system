@@ -11,6 +11,7 @@ import type {
 import {
   formatAmountWithCurrency,
   formatDate,
+  getAgentEditPath,
   getAgentDisplayName,
 } from '~/utils/transaction-format'
 
@@ -474,8 +475,30 @@ function resetToFirstPageAndLoad(): void {
               <td>
                 <StageBadge :stage="transaction.stage" />
               </td>
-              <td>{{ getAgentDisplayName(transaction.listingAgentId) }}</td>
-              <td>{{ getAgentDisplayName(transaction.sellingAgentId) }}</td>
+              <td>
+                <NuxtLink
+                  v-if="getAgentEditPath(transaction.listingAgentId)"
+                  class="agent-link"
+                  :to="getAgentEditPath(transaction.listingAgentId) || '/'"
+                >
+                  {{ getAgentDisplayName(transaction.listingAgentId) }}
+                </NuxtLink>
+                <span v-else>
+                  {{ getAgentDisplayName(transaction.listingAgentId) }}
+                </span>
+              </td>
+              <td>
+                <NuxtLink
+                  v-if="getAgentEditPath(transaction.sellingAgentId)"
+                  class="agent-link"
+                  :to="getAgentEditPath(transaction.sellingAgentId) || '/'"
+                >
+                  {{ getAgentDisplayName(transaction.sellingAgentId) }}
+                </NuxtLink>
+                <span v-else>
+                  {{ getAgentDisplayName(transaction.sellingAgentId) }}
+                </span>
+              </td>
               <td class="fee-cell">
                 {{
                   formatAmountWithCurrency(
@@ -926,6 +949,15 @@ function resetToFirstPageAndLoad(): void {
 }
 
 .property-link:hover {
+  color: #4f46e5;
+}
+
+.agent-link {
+  color: #374151;
+  font-weight: 700;
+}
+
+.agent-link:hover {
   color: #4f46e5;
 }
 

@@ -87,6 +87,14 @@ export function getAgentDisplayEmail(
   return 'Email unavailable'
 }
 
+export function getAgentEditPath(
+  value: TransactionAgentReference,
+): string | null {
+  const agentId = isPopulatedAgent(value) ? value._id : value
+
+  return agentId ? `/agents/${agentId}/edit` : null
+}
+
 export function formatDate(value: string): string {
   const date = new Date(value)
 

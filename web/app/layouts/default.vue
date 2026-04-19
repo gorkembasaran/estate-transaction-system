@@ -1,3 +1,43 @@
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue'
+
+type ThemeMode = 'light' | 'dark'
+
+const themeMode = ref<ThemeMode>('light')
+
+const themeToggleLabel = computed(() =>
+  themeMode.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+)
+
+const themeToggleText = computed(() =>
+  themeMode.value === 'dark' ? 'Light mode' : 'Dark mode',
+)
+
+function applyTheme(mode: ThemeMode): void {
+  themeMode.value = mode
+  document.documentElement.dataset.theme = mode
+  document.documentElement.style.colorScheme = mode
+  localStorage.setItem('estate-manager-theme', mode)
+}
+
+function toggleTheme(): void {
+  applyTheme(themeMode.value === 'dark' ? 'light' : 'dark')
+}
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('estate-manager-theme')
+
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    applyTheme(savedTheme)
+    return
+  }
+
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+  applyTheme(prefersDark ? 'dark' : 'light')
+})
+</script>
+
 <template>
   <div class="app-shell">
     <aside class="app-sidebar" aria-label="Application navigation">
@@ -35,6 +75,31 @@
           <span>Agents</span>
         </NuxtLink>
       </nav>
+
+      <button
+        class="theme-toggle"
+        type="button"
+        :aria-label="themeToggleLabel"
+        @click="toggleTheme"
+      >
+        <span class="theme-toggle__icon" aria-hidden="true">
+          <svg v-if="themeMode === 'dark'" viewBox="0 0 24 24">
+            <path d="M5.75 12a6.25 6.25 0 0 0 9.9 5.08 7.25 7.25 0 0 1-8.73-8.73A6.23 6.23 0 0 0 5.75 12z" />
+          </svg>
+          <svg v-else viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2.75v2" />
+            <path d="M12 19.25v2" />
+            <path d="m4.22 4.22 1.42 1.42" />
+            <path d="m18.36 18.36 1.42 1.42" />
+            <path d="M2.75 12h2" />
+            <path d="M19.25 12h2" />
+            <path d="m4.22 19.78 1.42-1.42" />
+            <path d="m18.36 5.64 1.42-1.42" />
+          </svg>
+        </span>
+        <span>{{ themeToggleText }}</span>
+      </button>
 
       <div class="sidebar-user">
         <div class="sidebar-user__avatar" aria-hidden="true">

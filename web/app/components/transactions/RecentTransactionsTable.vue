@@ -3,6 +3,7 @@ import type { Transaction } from '~/types/transaction'
 import {
   formatAmountWithCurrency,
   formatDate,
+  getAgentEditPath,
   getAgentDisplayName,
 } from '~/utils/transaction-format'
 import StageBadge from './StageBadge.vue'
@@ -36,7 +37,7 @@ defineProps<{
             <th>Listing Agent</th>
             <th>Selling Agent</th>
             <th>Fee</th>
-            <th>Date</th>
+            <th>Last Update</th>
           </tr>
         </thead>
 
@@ -62,10 +63,28 @@ defineProps<{
               <StageBadge :stage="transaction.stage" />
             </td>
             <td>
-              {{ getAgentDisplayName(transaction.listingAgentId) }}
+              <NuxtLink
+                v-if="getAgentEditPath(transaction.listingAgentId)"
+                class="agent-link"
+                :to="getAgentEditPath(transaction.listingAgentId) || '/'"
+              >
+                {{ getAgentDisplayName(transaction.listingAgentId) }}
+              </NuxtLink>
+              <span v-else>
+                {{ getAgentDisplayName(transaction.listingAgentId) }}
+              </span>
             </td>
             <td>
-              {{ getAgentDisplayName(transaction.sellingAgentId) }}
+              <NuxtLink
+                v-if="getAgentEditPath(transaction.sellingAgentId)"
+                class="agent-link"
+                :to="getAgentEditPath(transaction.sellingAgentId) || '/'"
+              >
+                {{ getAgentDisplayName(transaction.sellingAgentId) }}
+              </NuxtLink>
+              <span v-else>
+                {{ getAgentDisplayName(transaction.sellingAgentId) }}
+              </span>
             </td>
             <td class="fee-cell">
               {{
@@ -76,7 +95,7 @@ defineProps<{
               }}
             </td>
             <td>
-              {{ formatDate(transaction.createdAt) }}
+              {{ formatDate(transaction.updatedAt) }}
             </td>
           </tr>
         </tbody>
@@ -171,6 +190,15 @@ defineProps<{
 
 .property-link:hover {
   color: #0f766e;
+}
+
+.agent-link {
+  color: #374151;
+  font-weight: 700;
+}
+
+.agent-link:hover {
+  color: #4f46e5;
 }
 
 .fee-cell {

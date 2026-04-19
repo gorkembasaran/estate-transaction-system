@@ -97,6 +97,50 @@ a {
   color: #4f46e5;
 }
 
+.theme-toggle {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #374151;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 10px;
+  margin: 18px 14px 0;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.theme-toggle:hover {
+  border-color: #c7d2fe;
+  color: #4f46e5;
+}
+
+.theme-toggle__icon {
+  align-items: center;
+  color: currentColor;
+  display: inline-flex;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.theme-toggle__icon svg {
+  height: 20px;
+  width: 20px;
+}
+
+.theme-toggle__icon svg * {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+}
+
 .sidebar-user {
   align-items: center;
   border-top: 1px solid #e5e7eb;
@@ -204,6 +248,10 @@ a {
     padding: 0 18px 18px;
   }
 
+  .theme-toggle {
+    margin: 0 18px 18px;
+  }
+
   .nav-links a {
     flex: 0 0 auto;
     font-size: 16px;
@@ -227,4 +275,210 @@ a {
   .page-section p {
     font-size: 17px;
   }
+}
+
+html[data-theme='dark'] body {
+  background: #0f172a !important;
+  color: #e5e7eb !important;
+}
+
+html[data-theme='dark'] .app-shell {
+  background: #0f172a !important;
+}
+
+html[data-theme='dark'] .app-sidebar,
+html[data-theme='dark'] .agents-toolbar,
+html[data-theme='dark'] .transactions-toolbar,
+html[data-theme='dark'] .agents-table-card,
+html[data-theme='dark'] .transactions-table-card,
+html[data-theme='dark'] .recent-transactions,
+html[data-theme='dark'] .detail-card,
+html[data-theme='dark'] .agent-form-card,
+html[data-theme='dark'] .transaction-form-card,
+html[data-theme='dark'] .stat-card {
+  background: #111827 !important;
+  border-color: #273449 !important;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.26) !important;
+}
+
+html[data-theme='dark'] .sidebar-brand,
+html[data-theme='dark'] .sidebar-user,
+html[data-theme='dark'] .agents-table th,
+html[data-theme='dark'] .agents-table td,
+html[data-theme='dark'] .transactions-table th,
+html[data-theme='dark'] .transactions-table td,
+html[data-theme='dark'] .recent-transactions__table th,
+html[data-theme='dark'] .recent-transactions__table td,
+html[data-theme='dark'] .pagination-bar,
+html[data-theme='dark'] .agents-pagination,
+html[data-theme='dark'] .stage-update {
+  border-color: #273449 !important;
+}
+
+html[data-theme='dark'] .brand,
+html[data-theme='dark'] .page-section h1,
+html[data-theme='dark'] .dashboard-header h1,
+html[data-theme='dark'] .transactions-header h1,
+html[data-theme='dark'] .agents-header h1,
+html[data-theme='dark'] .form-heading h1,
+html[data-theme='dark'] .transaction-form-card h1,
+html[data-theme='dark'] .detail-hero h1,
+html[data-theme='dark'] .info-card h2,
+html[data-theme='dark'] .timeline-card h2,
+html[data-theme='dark'] .breakdown-section h2,
+html[data-theme='dark'] .property-link,
+html[data-theme='dark'] .fee-cell,
+html[data-theme='dark'] .agent-name-cell,
+html[data-theme='dark'] .agent-name-cell strong,
+html[data-theme='dark'] .sidebar-user strong,
+html[data-theme='dark'] .agents-table td,
+html[data-theme='dark'] .transactions-table td,
+html[data-theme='dark'] .recent-transactions__header h2,
+html[data-theme='dark'] .info-card dd,
+html[data-theme='dark'] .stage-timeline strong,
+html[data-theme='dark'] .breakdown-card strong,
+html[data-theme='dark'] .form-field input,
+html[data-theme='dark'] .form-field select,
+html[data-theme='dark'] .agent-combobox-copy strong,
+html[data-theme='dark'] .agent-option strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .sidebar-brand span,
+html[data-theme='dark'] .page-section p,
+html[data-theme='dark'] .dashboard-header p,
+html[data-theme='dark'] .transactions-header p,
+html[data-theme='dark'] .agents-header p,
+html[data-theme='dark'] .agents-toolbar p,
+html[data-theme='dark'] .transactions-toolbar p,
+html[data-theme='dark'] .agents-table th,
+html[data-theme='dark'] .transactions-table th,
+html[data-theme='dark'] .recent-transactions__table th,
+html[data-theme='dark'] .recent-transactions__table td,
+html[data-theme='dark'] .sidebar-user span,
+html[data-theme='dark'] .info-card dt,
+html[data-theme='dark'] .info-card dd span,
+html[data-theme='dark'] .stage-timeline time,
+html[data-theme='dark'] .breakdown-card span,
+html[data-theme='dark'] .breakdown-card p,
+html[data-theme='dark'] .breakdown-card small,
+html[data-theme='dark'] .date-field-label,
+html[data-theme='dark'] .agent-combobox-copy span,
+html[data-theme='dark'] .agent-option small,
+html[data-theme='dark'] .checkbox-copy small {
+  color: #94a3b8 !important;
+}
+
+html[data-theme='dark'] .nav-links a,
+html[data-theme='dark'] .theme-toggle,
+html[data-theme='dark'] .secondary-button,
+html[data-theme='dark'] .clear-search-button,
+html[data-theme='dark'] .clear-filters-button,
+html[data-theme='dark'] .pagination-bar button,
+html[data-theme='dark'] .agents-pagination button,
+html[data-theme='dark'] .agent-email-link,
+html[data-theme='dark'] .agent-link {
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] .nav-links a.router-link-active {
+  background: #312e81 !important;
+  color: #c7d2fe !important;
+}
+
+html[data-theme='dark'] .theme-toggle,
+html[data-theme='dark'] .search-field,
+html[data-theme='dark'] .stage-select,
+html[data-theme='dark'] .status-select,
+html[data-theme='dark'] .date-field,
+html[data-theme='dark'] .form-field input,
+html[data-theme='dark'] .form-field select,
+html[data-theme='dark'] .agent-combobox-control,
+html[data-theme='dark'] .agent-search-field,
+html[data-theme='dark'] .agent-dropdown,
+html[data-theme='dark'] .secondary-button,
+html[data-theme='dark'] .clear-search-button,
+html[data-theme='dark'] .clear-filters-button,
+html[data-theme='dark'] .pagination-bar button,
+html[data-theme='dark'] .agents-pagination button {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .search-field input,
+html[data-theme='dark'] .agent-search-field input {
+  background: transparent !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .search-field input::placeholder,
+html[data-theme='dark'] .form-field input::placeholder,
+html[data-theme='dark'] .agent-search-field input::placeholder {
+  color: #64748b !important;
+}
+
+html[data-theme='dark'] .agents-table th,
+html[data-theme='dark'] .transactions-table th,
+html[data-theme='dark'] .recent-transactions__table th,
+html[data-theme='dark'] .agent-result-note,
+html[data-theme='dark'] .form-loading,
+html[data-theme='dark'] .form-note,
+html[data-theme='dark'] .breakdown-empty,
+html[data-theme='dark'] .detail-skeleton-card span,
+html[data-theme='dark'] .detail-skeleton-card small,
+html[data-theme='dark'] .table-skeleton {
+  background: #172033 !important;
+}
+
+html[data-theme='dark'] .agent-option {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .agent-option:hover {
+  background: #1e1b4b !important;
+}
+
+html[data-theme='dark'] .sidebar-user__avatar,
+html[data-theme='dark'] .agent-avatar {
+  background: #1e1b4b !important;
+  color: #c7d2fe !important;
+}
+
+html[data-theme='dark'] .stat-card--accent {
+  background: #4f46e5 !important;
+  border-color: #4f46e5 !important;
+}
+
+html[data-theme='dark'] .breakdown-card {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+html[data-theme='dark'] .breakdown-card--listing {
+  background: #1e1b4b !important;
+  border-color: #4338ca !important;
+}
+
+html[data-theme='dark'] .breakdown-card--selling {
+  background: #052e16 !important;
+  border-color: #166534 !important;
+}
+
+html[data-theme='dark'] .status-badge:not(.is-active),
+html[data-theme='dark'] .stage-badge--agreement {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: #cbd5e1 !important;
+}
+
+html[data-theme='dark'] .empty-state strong,
+html[data-theme='dark'] .breakdown-empty strong {
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .empty-state,
+html[data-theme='dark'] .empty-copy,
+html[data-theme='dark'] .breakdown-empty {
+  color: #94a3b8 !important;
 }
