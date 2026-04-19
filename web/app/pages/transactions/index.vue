@@ -132,7 +132,18 @@ function formatDateFilterValue(value: string): string {
     return 'Select date'
   }
 
-  const [year, month, day] = value.split('-').map(Number)
+  const dateParts = value.split('-')
+  const yearValue = dateParts[0]
+  const monthValue = dateParts[1]
+  const dayValue = dateParts[2]
+
+  if (!yearValue || !monthValue || !dayValue) {
+    return value
+  }
+
+  const year = Number(yearValue)
+  const month = Number(monthValue)
+  const day = Number(dayValue)
   const date = new Date(year, month - 1, day)
 
   if (Number.isNaN(date.getTime())) {
