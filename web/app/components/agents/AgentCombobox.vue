@@ -11,11 +11,12 @@ const props = withDefaults(
     modelValue: string
     name: string
     placeholder?: string
+    searchAgents?: (query: string) => Promise<Agent[]>
   }>(),
   {
     disabled: false,
     loading: false,
-    placeholder: 'Search by name or email',
+    placeholder: 'Search active agents',
   },
 )
 
@@ -26,59 +27,66 @@ const emit = defineEmits<{
 const rootElement = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
 const searchQuery = ref('')
+const searchResults = ref<Agent[]>([])
+const selectedAgentSnapshot = ref<Agent | null>(null)
+const isSearching = ref(false)
+const searchError = ref<string | null>(null)
 const isOpen = ref(false)
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+let searchRequestId = 0
+let lastSearchedQuery = ''
 
-const selectedAgent = computed(
-  () => props.agents.find((agent) => agent._id === props.modelValue) ?? null,
-)
-const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
-const filteredAgents = computed(() => {
-  if (!normalizedSearchQuery.value) {
-    return props.agents.slice(0, 8)
-  }
+const selectedAgent = computed(() => {
+  const candidates = selectedAgentSnapshot.value
+    ? [...props.agents, ...searchResults.value, selectedAgentSnapshot.value]
+    : [...props.agents, ...searchResults.value]
 
-  return props.agents
-    .filter((agent) => {
-      const searchableText = `${agent.fullName} ${agent.email}`.toLowerCase()
-
-      return searchableText.includes(normalizedSearchQuery.value)
-    })
-    .slice(0, 8)
+  return candidates.find((agent) => agent._id === props.modelValue) ?? null
 })
-const hiddenResultCount = computed(() => {
+const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
+const visibleAgents = computed(() => {
   if (!normalizedSearchQuery.value) {
-    return Math.max(props.agents.length - filteredAgents.value.length, 0)
+    return props.agents.slice(0, 10)
   }
 
-  const totalMatches = props.agents.filter((agent) => {
-    const searchableText = `${agent.fullName} ${agent.email}`.toLowerCase()
-
-    return searchableText.includes(normalizedSearchQuery.value)
-  }).length
-
-  return Math.max(totalMatches - filteredAgents.value.length, 0)
+  return searchResults.value
 })
 const helperText = computed(() => {
-  if (props.loading) {
-    return 'Loading active agents...'
+  if (isSearching.value) {
+    return 'Searching active agents...'
   }
 
   if (selectedAgent.value) {
     return selectedAgent.value.email
   }
 
-  return 'Search active agents by full name or email.'
+  return 'Search active agents from the backend by full name or email.'
+})
+const shouldShowEmptyState = computed(() => {
+  return !props.loading && !isSearching.value && visibleAgents.value.length === 0
 })
 
 watch(
   () => props.modelValue,
-  () => {
+  (value) => {
+    if (!value) {
+      selectedAgentSnapshot.value = null
+    }
+
     searchQuery.value = ''
   },
 )
 
+watch(searchQuery, () => {
+  if (!props.searchAgents) {
+    return
+  }
+
+  scheduleAgentSearch()
+})
+
 async function openList(): Promise<void> {
-  if (props.disabled || props.loading) {
+  if (props.disabled) {
     return
   }
 
@@ -88,12 +96,14 @@ async function openList(): Promise<void> {
 }
 
 function selectAgent(agent: Agent): void {
+  selectedAgentSnapshot.value = agent
   emit('update:modelValue', agent._id)
   searchQuery.value = ''
   isOpen.value = false
 }
 
 function clearAgent(): void {
+  selectedAgentSnapshot.value = null
   emit('update:modelValue', '')
   searchQuery.value = ''
   isOpen.value = true
@@ -109,11 +119,66 @@ function closeOnOutsideClick(event: MouseEvent): void {
   }
 }
 
+function scheduleAgentSearch(): void {
+  const query = searchQuery.value.trim()
+
+  searchError.value = null
+
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+
+  if (!query) {
+    searchRequestId += 1
+    searchResults.value = []
+    lastSearchedQuery = ''
+    isSearching.value = false
+    return
+  }
+
+  const requestId = ++searchRequestId
+
+  debounceTimer = setTimeout(() => {
+    void runAgentSearch(query, requestId)
+  }, 300)
+}
+
+async function runAgentSearch(query: string, requestId: number): Promise<void> {
+  if (!props.searchAgents || query === lastSearchedQuery) {
+    return
+  }
+
+  lastSearchedQuery = query
+  isSearching.value = true
+  searchError.value = null
+
+  try {
+    const agents = await props.searchAgents(query)
+
+    if (requestId === searchRequestId) {
+      searchResults.value = agents
+    }
+  } catch {
+    if (requestId === searchRequestId) {
+      searchResults.value = []
+      searchError.value = 'Could not search active agents.'
+    }
+  } finally {
+    if (requestId === searchRequestId) {
+      isSearching.value = false
+    }
+  }
+}
+
 onMounted(() => {
   document.addEventListener('click', closeOnOutsideClick)
 })
 
 onBeforeUnmount(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+
   document.removeEventListener('click', closeOnOutsideClick)
 })
 </script>
@@ -127,7 +192,7 @@ onBeforeUnmount(() => {
     <div
       class="agent-combobox-control"
       :class="{
-        'is-disabled': disabled || loading,
+        'is-disabled': disabled,
         'is-open': isOpen,
       }"
       @click.stop="openList"
@@ -164,17 +229,21 @@ onBeforeUnmount(() => {
           ref="searchInput"
           v-model="searchQuery"
           autocomplete="off"
-          :disabled="disabled || loading"
+          :disabled="disabled"
           :name="`${name}Search`"
-          placeholder="Type name or email..."
+          placeholder="Search active agents by name or email..."
           type="search"
           @keydown.esc.prevent="isOpen = false"
         >
       </div>
 
-      <div v-if="filteredAgents.length > 0" class="agent-options">
+      <div v-if="props.loading || isSearching" class="agent-loading-state">
+        Searching active agents...
+      </div>
+
+      <div v-if="visibleAgents.length > 0" class="agent-options">
         <button
-          v-for="agent in filteredAgents"
+          v-for="agent in visibleAgents"
           :key="agent._id"
           class="agent-option"
           type="button"
@@ -190,13 +259,16 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <div v-else class="agent-empty-state">
-        No agents match this search.
+      <div v-if="searchError" class="agent-empty-state">
+        {{ searchError }}
       </div>
 
-      <div v-if="hiddenResultCount > 0" class="agent-result-note">
-        {{ hiddenResultCount }} more result{{ hiddenResultCount === 1 ? '' : 's' }}.
-        Keep typing to narrow the list.
+      <div v-else-if="shouldShowEmptyState" class="agent-empty-state">
+        No active agents found.
+      </div>
+
+      <div v-if="!normalizedSearchQuery && visibleAgents.length > 0" class="agent-result-note">
+        Showing recent active agents. Type to search the backend.
       </div>
     </div>
   </div>
@@ -425,12 +497,19 @@ onBeforeUnmount(() => {
   margin-top: 2px;
 }
 
+.agent-loading-state,
 .agent-empty-state,
 .agent-result-note {
   color: #6b7280;
   font-size: 13px;
   font-weight: 700;
   padding: 10px;
+}
+
+.agent-loading-state {
+  background: #eef2ff;
+  border-radius: 8px;
+  color: #4f46e5;
 }
 
 .agent-result-note {

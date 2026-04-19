@@ -111,6 +111,17 @@ export const useAgentsStore = defineStore('agents', {
       }
     },
 
+    async searchAgents(params: GetAgentsParams = {}): Promise<Agent[]> {
+      const response = await getAgents({
+        limit: params.limit ?? 10,
+        page: params.page ?? DEFAULT_PAGE,
+        search: params.search || undefined,
+        status: params.status ?? 'active',
+      })
+
+      return response.items
+    },
+
     async createAgent(payload: CreateAgentPayload): Promise<Agent> {
       this.isLoading = true
       this.error = null

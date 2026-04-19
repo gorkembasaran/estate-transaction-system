@@ -4,6 +4,7 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import AgentCombobox from '~/components/agents/AgentCombobox.vue'
 import { useAgentsStore } from '~/stores/agents'
 import { useTransactionsStore } from '~/stores/transactions'
+import type { Agent } from '~/types/agent'
 import type { CreateTransactionPayload } from '~/types/transaction'
 
 const currencyOptions = [
@@ -52,6 +53,8 @@ async function loadAgents(forceRefresh = false): Promise<void> {
     await agentsStore
       .fetchAgents({
         forceRefresh,
+        limit: 10,
+        page: 1,
         status: 'active',
       })
       .catch(() => undefined)
@@ -98,6 +101,15 @@ async function submitTransaction(): Promise<void> {
   } catch {
     // Store error is displayed in the form.
   }
+}
+
+async function searchActiveAgents(query: string): Promise<Agent[]> {
+  return agentsStore.searchAgents({
+    limit: 10,
+    page: 1,
+    search: query,
+    status: 'active',
+  })
 }
 
 function resetForm(): void {
@@ -166,6 +178,7 @@ onMounted(() => {
           :loading="agentsLoading"
           name="listingAgentId"
           placeholder="Select listing agent"
+          :search-agents="searchActiveAgents"
         />
 
         <AgentCombobox
@@ -176,6 +189,7 @@ onMounted(() => {
           :loading="agentsLoading"
           name="sellingAgentId"
           placeholder="Select selling agent"
+          :search-agents="searchActiveAgents"
         />
 
         <label class="form-field">

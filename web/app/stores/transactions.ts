@@ -34,6 +34,7 @@ interface TransactionsState {
   error: string | null
   lastFetchedAt: number | null
   lastFetchKey: string | null
+  lastFetchParams: GetTransactionsParams | null
   pagination: PaginationMeta
 }
 
@@ -50,6 +51,7 @@ export const useTransactionsStore = defineStore('transactions', {
     error: null,
     lastFetchedAt: null,
     lastFetchKey: null,
+    lastFetchParams: null,
     pagination: {
       hasNextPage: false,
       hasPreviousPage: false,
@@ -91,6 +93,7 @@ export const useTransactionsStore = defineStore('transactions', {
           this.pagination = response.meta
           this.lastFetchedAt = Date.now()
           this.lastFetchKey = requestKey
+          this.lastFetchParams = cloneFetchParams(params)
         } catch (error) {
           this.error = getStoreErrorMessage(error)
           throw error
@@ -139,20 +142,9 @@ export const useTransactionsStore = defineStore('transactions', {
       try {
         const transaction = await createTransactionRequest(payload)
 
-        this.items = [transaction, ...this.items]
         this.selectedTransaction = transaction
         this.breakdown = transaction.breakdown
-        this.pagination = {
-          ...this.pagination,
-          totalItems: this.pagination.totalItems + 1,
-          totalPages: Math.ceil(
-            (this.pagination.totalItems + 1) / this.pagination.limit,
-          ),
-        }
-
-        if (this.lastFetchedAt) {
-          this.lastFetchedAt = Date.now()
-        }
+        await this.refreshLastFetchedList()
 
         return transaction
       } catch (error) {
@@ -183,13 +175,7 @@ export const useTransactionsStore = defineStore('transactions', {
 
         this.selectedTransaction = transaction
         this.breakdown = transaction.breakdown
-        this.items = this.items.map((item) =>
-          item._id === transaction._id ? transaction : item,
-        )
-
-        if (this.lastFetchedAt) {
-          this.lastFetchedAt = Date.now()
-        }
+        await this.refreshLastFetchedList()
 
         return transaction
       } catch (error) {
@@ -225,6 +211,23 @@ export const useTransactionsStore = defineStore('transactions', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    async refreshLastFetchedList(): Promise<void> {
+      const params = this.lastFetchParams
+        ? cloneFetchParams(this.lastFetchParams)
+        : null
+
+      this.lastFetchedAt = null
+
+      if (!params) {
+        return
+      }
+
+      await this.fetchTransactions({
+        ...params,
+        forceRefresh: true,
+      }).catch(() => undefined)
     },
   },
 })
@@ -275,6 +278,19 @@ function createRequestKey(params: GetTransactionsParams): string {
     sortOrder: params.sortOrder ?? '',
     stage: params.stage ?? '',
   })
+}
+
+function cloneFetchParams(params: GetTransactionsParams): GetTransactionsParams {
+  return {
+    dateFrom: params.dateFrom,
+    dateTo: params.dateTo,
+    limit: params.limit,
+    page: params.page,
+    search: params.search,
+    sortBy: params.sortBy,
+    sortOrder: params.sortOrder,
+    stage: params.stage,
+  }
 }
 
 function preservePopulatedAgentReferences(
