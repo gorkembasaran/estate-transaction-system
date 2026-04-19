@@ -386,13 +386,13 @@ onMounted(() => {
 
 .detail-hero {
   display: grid;
-  gap: 26px;
-  padding: 32px;
+  gap: 20px;
+  padding: 24px;
 }
 
 .detail-hero h1 {
   color: #111827;
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1.1;
   margin: 0;
 }
@@ -411,8 +411,8 @@ onMounted(() => {
 .stage-update {
   border-top: 1px solid #e5e7eb;
   display: grid;
-  gap: 16px;
-  padding-top: 26px;
+  gap: 14px;
+  padding-top: 20px;
 }
 
 .stage-update label {
@@ -470,29 +470,29 @@ onMounted(() => {
 
 .detail-grid {
   display: grid;
-  gap: 30px;
+  gap: 22px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 .info-card,
 .timeline-card,
 .breakdown-section {
-  padding: 32px;
+  padding: 24px;
 }
 
 .info-card h2,
 .timeline-card h2,
 .breakdown-section h2 {
   color: #111827;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.2;
   margin: 0;
 }
 
 .info-card dl {
   display: grid;
-  gap: 24px;
-  margin: 38px 0 0;
+  gap: 18px;
+  margin: 28px 0 0;
 }
 
 .info-card dt {
@@ -504,7 +504,7 @@ onMounted(() => {
 
 .info-card dd {
   color: #111827;
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   margin: 0;
 }
@@ -521,30 +521,30 @@ onMounted(() => {
   display: grid;
   gap: 0;
   list-style: none;
-  margin: 32px 0 0;
+  margin: 26px 0 0;
   padding: 0;
 }
 
 .stage-timeline__item {
   display: grid;
   gap: 18px;
-  grid-template-columns: 44px minmax(0, 1fr);
-  min-height: 108px;
+  grid-template-columns: 38px minmax(0, 1fr);
+  min-height: 92px;
   position: relative;
 }
 
 .stage-timeline__item::after {
   background: #4f46e5;
   content: "";
-  height: calc(100% - 44px);
-  left: 21px;
+  height: calc(100% - 38px);
+  left: 18px;
   position: absolute;
-  top: 44px;
+  top: 38px;
   width: 2px;
 }
 
 .stage-timeline__item--last {
-  min-height: 44px;
+  min-height: 38px;
 }
 
 .stage-timeline__item--last::after {
@@ -557,10 +557,10 @@ onMounted(() => {
   border-radius: 999px;
   color: #ffffff;
   display: flex;
-  font-size: 18px;
-  height: 44px;
+  font-size: 16px;
+  height: 38px;
   justify-content: center;
-  width: 44px;
+  width: 38px;
 }
 
 .stage-timeline strong {
@@ -568,7 +568,7 @@ onMounted(() => {
   color: #111827;
   display: flex;
   flex-wrap: wrap;
-  font-size: 20px;
+  font-size: 17px;
   gap: 8px;
   line-height: 1.2;
 }
@@ -592,12 +592,12 @@ onMounted(() => {
 
 .breakdown-section {
   display: grid;
-  gap: 30px;
+  gap: 22px;
 }
 
 .breakdown-grid {
   display: grid;
-  gap: 28px;
+  gap: 18px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -608,9 +608,9 @@ onMounted(() => {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  min-height: 138px;
+  min-height: 118px;
   justify-content: center;
-  padding: 24px;
+  padding: 20px;
   text-align: center;
 }
 
@@ -632,7 +632,7 @@ onMounted(() => {
 
 .breakdown-card strong {
   color: #111827;
-  font-size: 34px;
+  font-size: 28px;
   line-height: 1.1;
   margin-top: 14px;
 }

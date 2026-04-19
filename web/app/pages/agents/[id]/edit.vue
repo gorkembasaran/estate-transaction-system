@@ -357,13 +357,13 @@ onMounted(async () => {
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   box-shadow:
-    0 18px 45px rgb(15 23 42 / 0.08),
+    0 12px 28px rgb(15 23 42 / 0.07),
     0 2px 8px rgb(15 23 42 / 0.04);
   display: grid;
-  gap: 22px;
+  gap: 18px;
   margin: 0 auto;
-  max-width: 620px;
-  padding: 40px;
+  max-width: 580px;
+  padding: 32px;
 }
 
 .form-heading {
@@ -381,7 +381,7 @@ onMounted(async () => {
 
 .form-heading h1 {
   color: #111827;
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1.2;
   margin: 0;
 }
@@ -425,9 +425,9 @@ onMounted(async () => {
   font: inherit;
   font-size: 15px;
   font-weight: 650;
-  min-height: 56px;
+  min-height: 48px;
   outline: 0;
-  padding: 0 18px;
+  padding: 0 14px;
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
@@ -549,8 +549,8 @@ onMounted(async () => {
   font-size: 14px;
   font-weight: 800;
   justify-content: center;
-  min-height: 52px;
-  padding: 0 18px;
+  min-height: 46px;
+  padding: 0 16px;
 }
 
 .primary-button {

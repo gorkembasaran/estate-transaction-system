@@ -68,13 +68,6 @@ const resultSummary = computed(() => {
 
   return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
 })
-const loadedSummary = computed(() => {
-  if (!hasActiveFilters.value) {
-    return ''
-  }
-
-  return 'Filtered by the transaction API'
-})
 const showSkeletonRows = computed(
   () => isLoading.value && transactions.value.length === 0,
 )
@@ -374,9 +367,6 @@ function resetToFirstPageAndLoad(): void {
       </button>
 
       <p>{{ resultSummary }}</p>
-      <span v-if="loadedSummary" class="loaded-summary">
-        {{ loadedSummary }}
-      </span>
     </section>
 
     <section class="transactions-table-card" aria-label="Transactions">
@@ -541,7 +531,7 @@ function resetToFirstPageAndLoad(): void {
 <style scoped>
 .transactions-page {
   display: grid;
-  gap: 32px;
+  gap: 24px;
 }
 
 .transactions-header {
@@ -553,16 +543,16 @@ function resetToFirstPageAndLoad(): void {
 
 .transactions-header h1 {
   color: #111827;
-  font-size: 42px;
+  font-size: 36px;
   line-height: 1.1;
   margin: 0;
 }
 
 .transactions-header p {
   color: #4b5563;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
-  margin: 14px 0 0;
+  margin: 10px 0 0;
 }
 
 .create-button {
@@ -573,11 +563,11 @@ function resetToFirstPageAndLoad(): void {
   color: #ffffff;
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 800;
   gap: 10px;
-  min-height: 52px;
-  padding: 0 26px;
+  min-height: 44px;
+  padding: 0 20px;
 }
 
 .create-button:hover {
@@ -585,7 +575,7 @@ function resetToFirstPageAndLoad(): void {
 }
 
 .create-button span {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 400;
   line-height: 1;
   margin-top: -2px;
@@ -636,30 +626,22 @@ function resetToFirstPageAndLoad(): void {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgb(15 23 42 / 0.08);
   display: grid;
-  gap: 18px 22px;
+  gap: 14px 16px;
   grid-template-columns:
     minmax(260px, 1.35fr)
     minmax(180px, 0.8fr)
     minmax(150px, 0.55fr)
     minmax(150px, 0.55fr)
     auto;
-  padding: 32px;
+  padding: 22px 24px;
 }
 
 .transactions-toolbar p {
   color: #4b5563;
-  font-size: 16px;
-  font-weight: 600;
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
-.loaded-summary {
-  color: #6b7280;
   font-size: 14px;
   font-weight: 600;
   grid-column: 1 / -1;
-  margin-top: -10px;
+  margin: 0;
 }
 
 .search-field {
@@ -667,16 +649,16 @@ function resetToFirstPageAndLoad(): void {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   display: flex;
-  gap: 12px;
-  min-height: 50px;
-  padding: 0 16px;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
 }
 
 .search-field svg {
   color: #9ca3af;
   flex: 0 0 auto;
-  height: 24px;
-  width: 24px;
+  height: 21px;
+  width: 21px;
 }
 
 .search-field svg * {
@@ -692,7 +674,7 @@ function resetToFirstPageAndLoad(): void {
   color: #111827;
   flex: 1;
   font: inherit;
-  font-size: 17px;
+  font-size: 15px;
   min-width: 0;
   outline: 0;
 }
@@ -708,8 +690,8 @@ function resetToFirstPageAndLoad(): void {
   border-radius: 8px;
   color: #111827;
   font: inherit;
-  font-size: 17px;
-  min-height: 50px;
+  font-size: 15px;
+  min-height: 44px;
   outline: 0;
   padding: 0 16px;
 }
@@ -720,9 +702,9 @@ function resetToFirstPageAndLoad(): void {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   display: flex;
-  gap: 12px;
-  min-height: 50px;
-  padding: 0 14px 0 16px;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px 0 14px;
   position: relative;
   transition:
     border-color 160ms ease,
@@ -809,8 +791,8 @@ function resetToFirstPageAndLoad(): void {
   font-size: 14px;
   font-weight: 800;
   justify-content: center;
-  min-height: 50px;
-  padding: 0 16px;
+  min-height: 44px;
+  padding: 0 14px;
   white-space: nowrap;
 }
 
@@ -849,7 +831,7 @@ function resetToFirstPageAndLoad(): void {
 .transactions-table th,
 .transactions-table td {
   border-top: 1px solid #edf0f3;
-  padding: 20px 32px;
+  padding: 16px 24px;
   text-align: left;
   vertical-align: middle;
 }
@@ -861,7 +843,7 @@ function resetToFirstPageAndLoad(): void {
 .transactions-table th {
   background: #f9fafb;
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -924,7 +906,7 @@ function resetToFirstPageAndLoad(): void {
 
 .transactions-table td {
   color: #374151;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .property-link {
@@ -999,8 +981,8 @@ function resetToFirstPageAndLoad(): void {
   display: flex;
   gap: 16px;
   justify-content: flex-end;
-  min-height: 68px;
-  padding: 0 32px;
+  min-height: 58px;
+  padding: 0 24px;
 }
 
 .pagination-bar span {

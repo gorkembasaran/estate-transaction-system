@@ -222,9 +222,9 @@ onBeforeUnmount(() => {
   border-radius: 8px;
   cursor: pointer;
   display: flex;
-  gap: 12px;
-  min-height: 56px;
-  padding: 9px 18px;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 14px;
   transition:
     border-color 160ms ease,
     box-shadow 160ms ease,

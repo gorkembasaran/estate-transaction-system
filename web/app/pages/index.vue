@@ -199,25 +199,25 @@ onMounted(() => {
 <style scoped>
 .dashboard-page {
   display: grid;
-  gap: 30px;
+  gap: 24px;
 }
 
 .dashboard-header {
-  padding-bottom: 16px;
+  padding-bottom: 8px;
 }
 
 .dashboard-header h1 {
   color: #111827;
-  font-size: 42px;
+  font-size: 36px;
   line-height: 1.1;
   margin: 0;
 }
 
 .dashboard-header p {
   color: #4b5563;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
-  margin: 14px 0 0;
+  margin: 10px 0 0;
 }
 
 .dashboard-alert button {
@@ -261,7 +261,7 @@ onMounted(() => {
 
 .dashboard-grid {
   display: grid;
-  gap: 30px;
+  gap: 22px;
 }
 
 .dashboard-grid--summary {
@@ -273,7 +273,7 @@ onMounted(() => {
 }
 
 .dashboard-revenue-card {
-  min-height: 252px;
+  min-height: 220px;
 }
 
 .revenue-breakdown {

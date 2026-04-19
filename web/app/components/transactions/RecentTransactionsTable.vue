@@ -110,8 +110,8 @@ defineProps<{
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  min-height: 94px;
-  padding: 0 32px;
+  min-height: 74px;
+  padding: 0 24px;
 }
 
 .recent-transactions__header h2 {
@@ -145,7 +145,7 @@ defineProps<{
 .recent-transactions__table th,
 .recent-transactions__table td {
   border-top: 1px solid #edf0f3;
-  padding: 20px 32px;
+  padding: 16px 24px;
   text-align: left;
   vertical-align: middle;
 }

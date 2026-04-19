@@ -31,19 +31,19 @@ a {
   left: 0;
   position: fixed;
   top: 0;
-  width: 330px;
+  width: 280px;
   z-index: 20;
 }
 
 .sidebar-brand {
   border-bottom: 1px solid #edf0f3;
-  padding: 32px 28px 34px;
+  padding: 26px 24px 28px;
 }
 
 .brand {
   color: #111827;
   display: block;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.1;
@@ -52,16 +52,16 @@ a {
 .sidebar-brand span {
   color: #6b7280;
   display: block;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .nav-links {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px 18px 0;
+  gap: 8px;
+  padding: 20px 14px 0;
 }
 
 .nav-links a {
@@ -70,18 +70,18 @@ a {
   border-radius: 8px;
   color: #374151;
   display: flex;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
-  gap: 14px;
-  min-height: 62px;
-  padding: 0 22px;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 18px;
 }
 
 .nav-links a svg {
   color: currentColor;
   flex: 0 0 auto;
-  height: 24px;
-  width: 24px;
+  height: 22px;
+  width: 22px;
 }
 
 .nav-links a svg * {
@@ -101,10 +101,10 @@ a {
   align-items: center;
   border-top: 1px solid #e5e7eb;
   display: flex;
-  gap: 14px;
+  gap: 12px;
   margin-top: auto;
-  min-height: 88px;
-  padding: 20px 28px;
+  min-height: 76px;
+  padding: 16px 24px;
 }
 
 .sidebar-user__avatar {
@@ -114,14 +114,14 @@ a {
   color: #6b7280;
   display: flex;
   flex: 0 0 auto;
-  height: 44px;
+  height: 38px;
   justify-content: center;
-  width: 44px;
+  width: 38px;
 }
 
 .sidebar-user__avatar svg {
-  height: 24px;
-  width: 24px;
+  height: 21px;
+  width: 21px;
 }
 
 .sidebar-user__avatar svg * {
@@ -135,21 +135,21 @@ a {
 .sidebar-user strong {
   color: #111827;
   display: block;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.2;
 }
 
 .sidebar-user span {
   color: #6b7280;
   display: block;
-  font-size: 14px;
+  font-size: 13px;
   margin-top: 4px;
 }
 
 .app-main {
-  margin-left: 330px;
+  margin-left: 280px;
   min-height: 100vh;
-  padding: 42px 42px 56px;
+  padding: 32px 34px 46px;
 }
 
 .page-section {
@@ -167,14 +167,14 @@ a {
 
 .page-section h1 {
   color: #111827;
-  font-size: 42px;
+  font-size: 36px;
   line-height: 1.1;
   margin: 0 0 12px;
 }
 
 .page-section p {
   color: #4b5563;
-  font-size: 20px;
+  font-size: 17px;
   line-height: 1.4;
   margin: 0;
 }

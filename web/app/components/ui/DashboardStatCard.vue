@@ -111,9 +111,9 @@ withDefaults(
   box-shadow: 0 2px 5px rgb(15 23 42 / 0.08);
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  min-height: 168px;
-  padding: 32px;
+  gap: 18px;
+  min-height: 140px;
+  padding: 24px;
 }
 
 .stat-card--accent {
@@ -137,14 +137,14 @@ withDefaults(
   color: #4f46e5;
   display: flex;
   flex: 0 0 auto;
-  height: 62px;
+  height: 48px;
   justify-content: center;
-  width: 62px;
+  width: 48px;
 }
 
 .stat-card__icon svg {
-  height: 32px;
-  width: 32px;
+  height: 26px;
+  width: 26px;
 }
 
 .stat-card__icon svg * {
@@ -177,10 +177,10 @@ withDefaults(
 
 .stat-card__label {
   color: #6b7280;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
 }
 
 .stat-card--accent .stat-card__label {
@@ -197,7 +197,7 @@ withDefaults(
 .stat-card__value {
   color: #111827;
   display: block;
-  font-size: 38px;
+  font-size: 32px;
   line-height: 1.1;
   overflow-wrap: anywhere;
 }
@@ -209,7 +209,7 @@ withDefaults(
 .stat-card__metric,
 .stat-card__value-metric {
   display: inline-flex;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
@@ -220,7 +220,7 @@ withDefaults(
 }
 
 .stat-card__value-metric {
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .stat-card__metric--positive {
@@ -244,8 +244,8 @@ withDefaults(
 .stat-card__support {
   color: #6b7280;
   display: block;
-  font-size: 16px;
-  margin-top: 10px;
+  font-size: 14px;
+  margin-top: 8px;
 }
 
 .stat-card--accent .stat-card__support {

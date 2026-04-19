@@ -62,9 +62,6 @@ const resultSummary = computed(() => {
     pagination.value.totalItems
   } ${scopeLabel}`
 })
-const loadedSummary = computed(() =>
-  hasActiveFilters.value ? 'Filters are handled by the agents API' : '',
-)
 const emptyStateTitle = computed(() => {
   if (hasActiveFilters.value) {
     return 'No agents match your current filters'
@@ -229,9 +226,6 @@ watch(currentPage, () => {
       </div>
 
       <p>{{ resultSummary }}</p>
-      <span v-if="loadedSummary" class="loaded-summary">
-        {{ loadedSummary }}
-      </span>
     </section>
 
     <section class="agents-table-card" aria-label="Agents">
@@ -336,7 +330,7 @@ watch(currentPage, () => {
 <style scoped>
 .agents-page {
   display: grid;
-  gap: 32px;
+  gap: 24px;
 }
 
 .agents-header {
@@ -348,16 +342,16 @@ watch(currentPage, () => {
 
 .agents-header h1 {
   color: #111827;
-  font-size: 42px;
+  font-size: 36px;
   line-height: 1.1;
   margin: 0;
 }
 
 .agents-header p {
   color: #4b5563;
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 500;
-  margin: 14px 0 0;
+  margin: 10px 0 0;
 }
 
 .create-button,
@@ -374,9 +368,9 @@ watch(currentPage, () => {
 
 .create-button {
   flex: 0 0 auto;
-  font-size: 16px;
-  min-height: 52px;
-  padding: 0 26px;
+  font-size: 15px;
+  min-height: 44px;
+  padding: 0 20px;
 }
 
 .create-button:hover,
@@ -385,7 +379,7 @@ watch(currentPage, () => {
 }
 
 .create-button span {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 400;
   line-height: 1;
   margin-top: -2px;
@@ -436,15 +430,15 @@ watch(currentPage, () => {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgb(15 23 42 / 0.08);
   display: grid;
-  gap: 20px;
-  padding: 28px 32px;
+  gap: 16px;
+  padding: 22px 24px;
 }
 
 .agents-filter-row {
   align-items: center;
   display: grid;
-  gap: 14px;
-  grid-template-columns: minmax(0, 1fr) 240px auto;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 220px auto;
 }
 
 .search-field {
@@ -452,9 +446,9 @@ watch(currentPage, () => {
   border: 1px solid #d1d5db;
   border-radius: 8px;
   display: flex;
-  gap: 12px;
-  min-height: 50px;
-  padding: 0 16px;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 14px;
 }
 
 .search-field:focus-within {
@@ -465,8 +459,8 @@ watch(currentPage, () => {
 .search-field svg {
   color: #9ca3af;
   flex: 0 0 auto;
-  height: 24px;
-  width: 24px;
+  height: 21px;
+  width: 21px;
 }
 
 .search-field svg * {
@@ -482,7 +476,7 @@ watch(currentPage, () => {
   color: #111827;
   flex: 1;
   font: inherit;
-  font-size: 17px;
+  font-size: 15px;
   min-width: 0;
   outline: 0;
 }
@@ -503,9 +497,9 @@ watch(currentPage, () => {
   border-radius: 8px;
   color: #111827;
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  min-height: 50px;
+  min-height: 44px;
   outline: 0;
   padding: 0 44px 0 16px;
 }
@@ -528,8 +522,8 @@ watch(currentPage, () => {
   font-weight: 800;
   justify-content: center;
   justify-self: start;
-  min-height: 50px;
-  padding: 0 18px;
+  min-height: 44px;
+  padding: 0 16px;
   white-space: nowrap;
 }
 
@@ -540,15 +534,9 @@ watch(currentPage, () => {
 
 .agents-toolbar p {
   color: #4b5563;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   margin: 0;
-}
-
-.loaded-summary {
-  color: #6b7280;
-  font-size: 13px;
-  font-weight: 700;
 }
 
 .agents-table-card {
@@ -572,7 +560,7 @@ watch(currentPage, () => {
 .agents-table th,
 .agents-table td {
   border-top: 1px solid #edf0f3;
-  padding: 20px 32px;
+  padding: 16px 24px;
   text-align: left;
   vertical-align: middle;
 }
@@ -584,7 +572,7 @@ watch(currentPage, () => {
 .agents-table th {
   background: #f9fafb;
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -592,14 +580,14 @@ watch(currentPage, () => {
 
 .agents-table td {
   color: #4b5563;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .agent-name-cell {
   align-items: center;
   color: #111827;
   display: flex;
-  gap: 14px;
+  gap: 12px;
 }
 
 .agent-name-cell strong {
@@ -615,9 +603,9 @@ watch(currentPage, () => {
   flex: 0 0 auto;
   font-size: 14px;
   font-weight: 900;
-  height: 42px;
+  height: 36px;
   justify-content: center;
-  width: 42px;
+  width: 36px;
 }
 
 .agent-email-link {
@@ -693,7 +681,7 @@ watch(currentPage, () => {
   display: flex;
   gap: 16px;
   justify-content: flex-end;
-  padding: 18px 32px;
+  padding: 14px 24px;
 }
 
 .agents-pagination button {
