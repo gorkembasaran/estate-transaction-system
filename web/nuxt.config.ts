@@ -1,5 +1,22 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
+const themeInitScript = `
+(function () {
+  try {
+    var savedTheme = localStorage.getItem('estate-manager-theme')
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    var theme = savedTheme === 'light' || savedTheme === 'dark'
+      ? savedTheme
+      : prefersDark
+        ? 'dark'
+        : 'light'
+
+    document.documentElement.dataset.theme = theme
+    document.documentElement.style.colorScheme = theme
+  } catch (_) {}
+})()
+`
+
 export default defineNuxtConfig({
   app: {
     head: {
@@ -20,6 +37,13 @@ export default defineNuxtConfig({
           rel: 'alternate icon',
           type: 'image/x-icon',
           href: '/favicon.ico',
+        },
+      ],
+      script: [
+        {
+          innerHTML: themeInitScript,
+          tagPriority: -20,
+          tagPosition: 'head',
         },
       ],
     },

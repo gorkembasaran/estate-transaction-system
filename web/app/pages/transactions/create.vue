@@ -33,21 +33,31 @@ const form = reactive<CreateTransactionPayload>({
 })
 const serviceFeeInput = ref('')
 const localError = ref<string | null>(null)
+const hasCompletedInitialLoad = ref(false)
 
 const isSubmitting = computed(() => transactionLoading.value)
-const isPageLoading = computed(() => agentsLoading.value && agents.value.length === 0)
+const isPageLoading = computed(
+  () =>
+    !hasCompletedInitialLoad.value &&
+    agents.value.length === 0 &&
+    !agentsError.value,
+)
 const formError = computed(
   () => localError.value || transactionError.value || agentsError.value,
 )
 const hasAgents = computed(() => agents.value.length > 0)
 
 async function loadAgents(forceRefresh = false): Promise<void> {
-  await agentsStore
-    .fetchAgents({
-      forceRefresh,
-      status: 'active',
-    })
-    .catch(() => undefined)
+  try {
+    await agentsStore
+      .fetchAgents({
+        forceRefresh,
+        status: 'active',
+      })
+      .catch(() => undefined)
+  } finally {
+    hasCompletedInitialLoad.value = true
+  }
 }
 
 async function submitTransaction(): Promise<void> {
@@ -121,92 +131,105 @@ onMounted(() => {
         {{ formError }}
       </div>
 
-      <div v-if="isPageLoading" class="form-loading">
-        Loading agents...
+      <div
+        v-if="isPageLoading"
+        class="form-skeleton"
+        aria-label="Loading transaction form"
+      >
+        <div v-for="index in 5" :key="index" class="form-skeleton__field">
+          <span class="form-skeleton__line" />
+          <span class="form-skeleton__input" />
+        </div>
+        <div class="form-skeleton__actions">
+          <span class="form-skeleton__button" />
+          <span class="form-skeleton__button" />
+        </div>
       </div>
 
-      <label class="form-field">
-        <span>Property Title *</span>
-        <input
-          v-model="form.propertyTitle"
-          autocomplete="off"
-          name="propertyTitle"
-          placeholder="Enter property title"
-          type="text"
-        >
-      </label>
-
-      <AgentCombobox
-        v-model="form.listingAgentId"
-        :agents="agents"
-        :disabled="!hasAgents"
-        label="Listing Agent"
-        :loading="agentsLoading"
-        name="listingAgentId"
-        placeholder="Select listing agent"
-      />
-
-      <AgentCombobox
-        v-model="form.sellingAgentId"
-        :agents="agents"
-        :disabled="!hasAgents"
-        label="Selling Agent"
-        :loading="agentsLoading"
-        name="sellingAgentId"
-        placeholder="Select selling agent"
-      />
-
-      <label class="form-field">
-        <span>Service Fee *</span>
-        <input
-          v-model="serviceFeeInput"
-          min="0.01"
-          name="totalServiceFee"
-          placeholder="Enter service fee"
-          step="0.01"
-          type="number"
-        >
-      </label>
-
-      <label class="form-field">
-        <span>Currency *</span>
-        <span class="select-control">
-          <select
-            v-model="form.currency"
-            name="currency"
-            aria-label="Select currency"
+      <template v-else>
+        <label class="form-field">
+          <span>Property Title *</span>
+          <input
+            v-model="form.propertyTitle"
+            autocomplete="off"
+            name="propertyTitle"
+            placeholder="Enter property title"
+            type="text"
           >
-            <option
-              v-for="currency in currencyOptions"
-              :key="currency.value"
-              :value="currency.value"
+        </label>
+
+        <AgentCombobox
+          v-model="form.listingAgentId"
+          :agents="agents"
+          :disabled="!hasAgents"
+          label="Listing Agent"
+          :loading="agentsLoading"
+          name="listingAgentId"
+          placeholder="Select listing agent"
+        />
+
+        <AgentCombobox
+          v-model="form.sellingAgentId"
+          :agents="agents"
+          :disabled="!hasAgents"
+          label="Selling Agent"
+          :loading="agentsLoading"
+          name="sellingAgentId"
+          placeholder="Select selling agent"
+        />
+
+        <label class="form-field">
+          <span>Service Fee *</span>
+          <input
+            v-model="serviceFeeInput"
+            min="0.01"
+            name="totalServiceFee"
+            placeholder="Enter service fee"
+            step="0.01"
+            type="number"
+          >
+        </label>
+
+        <label class="form-field">
+          <span>Currency *</span>
+          <span class="select-control">
+            <select
+              v-model="form.currency"
+              name="currency"
+              aria-label="Select currency"
             >
-              {{ currency.value }} - {{ currency.label }}
-            </option>
-          </select>
-          <svg class="select-chevron" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="m4 6 4 4 4-4" />
-          </svg>
-        </span>
-      </label>
+              <option
+                v-for="currency in currencyOptions"
+                :key="currency.value"
+                :value="currency.value"
+              >
+                {{ currency.value }} - {{ currency.label }}
+              </option>
+            </select>
+            <svg class="select-chevron" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="m4 6 4 4 4-4" />
+            </svg>
+          </span>
+        </label>
 
-      <div v-if="!isPageLoading && !hasAgents" class="form-note">
-        Create an agent before creating a transaction.
-      </div>
+        <div v-if="!hasAgents" class="form-note">
+          Create an agent before creating a transaction.
+        </div>
 
-      <div class="form-actions">
-        <button
-          class="primary-button"
-          :disabled="isSubmitting || !hasAgents"
-          type="submit"
-        >
-          {{ isSubmitting ? 'Creating...' : 'Create Transaction' }}
-        </button>
+        <div class="form-actions">
+          <button
+            class="primary-button"
+            :disabled="isSubmitting || !hasAgents"
+            type="submit"
+          >
+            {{ isSubmitting ? 'Creating...' : 'Create Transaction' }}
+          </button>
 
-        <NuxtLink class="secondary-button" to="/transactions" @click="resetForm">
-          Cancel
-        </NuxtLink>
-      </div>
+          <NuxtLink class="secondary-button" to="/transactions" @click="resetForm">
+            Cancel
+          </NuxtLink>
+        </div>
+      </template>
     </form>
   </section>
 </template>

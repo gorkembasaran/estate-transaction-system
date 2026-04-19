@@ -31,6 +31,7 @@ const { error, isLoading, selectedTransaction } = storeToRefs(transactionsStore)
 
 const selectedNextStage = ref<TransactionStage | ''>('')
 const localError = ref<string | null>(null)
+const hasCompletedInitialLoad = ref(false)
 
 const transactionId = computed(() => {
   const param = route.params.id
@@ -73,7 +74,10 @@ const canUpdateStage = computed(
 )
 const pageError = computed(() => localError.value || error.value)
 const showInitialLoading = computed(
-  () => isLoading.value && transaction.value === null,
+  () =>
+    !hasCompletedInitialLoad.value &&
+    transaction.value === null &&
+    !pageError.value,
 )
 
 async function loadTransaction(): Promise<void> {
@@ -81,12 +85,17 @@ async function loadTransaction(): Promise<void> {
 
   if (!transactionId.value) {
     localError.value = 'Transaction id is missing.'
+    hasCompletedInitialLoad.value = true
     return
   }
 
-  await transactionsStore
-    .fetchTransactionById(transactionId.value)
-    .catch(() => undefined)
+  try {
+    await transactionsStore
+      .fetchTransactionById(transactionId.value)
+      .catch(() => undefined)
+  } finally {
+    hasCompletedInitialLoad.value = true
+  }
 }
 
 async function updateStage(): Promise<void> {
@@ -159,10 +168,36 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="showInitialLoading" class="detail-card detail-skeleton-card">
-      <span />
-      <small />
-      <small />
+    <div v-if="showInitialLoading" class="detail-loading-layout">
+      <section class="detail-card detail-skeleton-card detail-skeleton-card--hero">
+        <span />
+        <small />
+        <small />
+      </section>
+
+      <div class="detail-grid">
+        <section class="detail-card detail-skeleton-card">
+          <span />
+          <small />
+          <small />
+          <small />
+          <small />
+        </section>
+
+        <section class="detail-card detail-skeleton-card">
+          <span />
+          <small />
+          <small />
+          <small />
+          <small />
+        </section>
+      </div>
+
+      <section class="detail-card detail-skeleton-card detail-skeleton-card--wide">
+        <span />
+        <small />
+        <small />
+      </section>
     </div>
 
     <template v-else-if="transaction">
@@ -789,6 +824,16 @@ onMounted(() => {
   display: grid;
   gap: 14px;
   padding: 32px;
+}
+
+.detail-loading-layout {
+  display: grid;
+  gap: 24px;
+}
+
+.detail-skeleton-card--hero,
+.detail-skeleton-card--wide {
+  min-height: 160px;
 }
 
 .detail-skeleton-card span,

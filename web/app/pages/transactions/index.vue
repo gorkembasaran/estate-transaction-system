@@ -40,6 +40,7 @@ const dateToInput = ref<HTMLInputElement | null>(null)
 const currentPage = ref(1)
 const sortBy = ref<TransactionSortBy>('updatedAt')
 const sortOrder = ref<TransactionSortOrder>('desc')
+const hasCompletedInitialLoad = ref(false)
 const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -70,7 +71,10 @@ const resultSummary = computed(() => {
   return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
 })
 const showSkeletonRows = computed(
-  () => isLoading.value && transactions.value.length === 0,
+  () =>
+    !hasCompletedInitialLoad.value &&
+    transactions.value.length === 0 &&
+    !error.value,
 )
 const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
 const emptyStateTitle = computed(() =>
@@ -85,19 +89,23 @@ const emptyStateDescription = computed(() =>
 )
 
 async function loadTransactions(forceRefresh = false): Promise<void> {
-  await transactionsStore
-    .fetchTransactions({
-      forceRefresh,
-      dateFrom: dateFrom.value || undefined,
-      dateTo: dateTo.value || undefined,
-      limit: pageSize,
-      page: currentPage.value,
-      search: normalizedSearchQuery.value || undefined,
-      sortBy: sortBy.value,
-      sortOrder: sortOrder.value,
-      stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
-    })
-    .catch(() => undefined)
+  try {
+    await transactionsStore
+      .fetchTransactions({
+        forceRefresh,
+        dateFrom: dateFrom.value || undefined,
+        dateTo: dateTo.value || undefined,
+        limit: pageSize,
+        page: currentPage.value,
+        search: normalizedSearchQuery.value || undefined,
+        sortBy: sortBy.value,
+        sortOrder: sortOrder.value,
+        stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
+      })
+      .catch(() => undefined)
+  } finally {
+    hasCompletedInitialLoad.value = true
+  }
 }
 
 async function retryTransactions(): Promise<void> {

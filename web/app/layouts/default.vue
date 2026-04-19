@@ -9,10 +9,6 @@ const themeToggleLabel = computed(() =>
   themeMode.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
 )
 
-const themeToggleText = computed(() =>
-  themeMode.value === 'dark' ? 'Light mode' : 'Dark mode',
-)
-
 function applyTheme(mode: ThemeMode): void {
   themeMode.value = mode
   document.documentElement.dataset.theme = mode
@@ -25,6 +21,13 @@ function toggleTheme(): void {
 }
 
 onMounted(() => {
+  const currentTheme = document.documentElement.dataset.theme
+
+  if (currentTheme === 'light' || currentTheme === 'dark') {
+    themeMode.value = currentTheme
+    return
+  }
+
   const savedTheme = localStorage.getItem('estate-manager-theme')
 
   if (savedTheme === 'light' || savedTheme === 'dark') {
@@ -42,7 +45,33 @@ onMounted(() => {
   <div class="app-shell">
     <aside class="app-sidebar" aria-label="Application navigation">
       <div class="sidebar-brand">
-        <NuxtLink to="/" class="brand">Estate Manager</NuxtLink>
+        <div class="sidebar-brand__top">
+          <NuxtLink to="/" class="brand">Estate Manager</NuxtLink>
+          <button
+            class="theme-toggle"
+            type="button"
+            :aria-label="themeToggleLabel"
+            :title="themeToggleLabel"
+            @click="toggleTheme"
+          >
+            <span class="theme-toggle__icon" aria-hidden="true">
+              <svg v-if="themeMode === 'dark'" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2.75v2" />
+                <path d="M12 19.25v2" />
+                <path d="m4.22 4.22 1.42 1.42" />
+                <path d="m18.36 18.36 1.42 1.42" />
+                <path d="M2.75 12h2" />
+                <path d="M19.25 12h2" />
+                <path d="m4.22 19.78 1.42-1.42" />
+                <path d="m18.36 5.64 1.42-1.42" />
+              </svg>
+              <svg v-else class="theme-toggle__moon" viewBox="0 0 24 24">
+                <path d="M12 3a6.5 6.5 0 0 0 8.9 6.05A8.5 8.5 0 1 1 12 3z" />
+              </svg>
+            </span>
+          </button>
+        </div>
         <span>Transaction System</span>
       </div>
 
@@ -75,31 +104,6 @@ onMounted(() => {
           <span>Agents</span>
         </NuxtLink>
       </nav>
-
-      <button
-        class="theme-toggle"
-        type="button"
-        :aria-label="themeToggleLabel"
-        @click="toggleTheme"
-      >
-        <span class="theme-toggle__icon" aria-hidden="true">
-          <svg v-if="themeMode === 'dark'" viewBox="0 0 24 24">
-            <path d="M5.75 12a6.25 6.25 0 0 0 9.9 5.08 7.25 7.25 0 0 1-8.73-8.73A6.23 6.23 0 0 0 5.75 12z" />
-          </svg>
-          <svg v-else viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2.75v2" />
-            <path d="M12 19.25v2" />
-            <path d="m4.22 4.22 1.42 1.42" />
-            <path d="m18.36 18.36 1.42 1.42" />
-            <path d="M2.75 12h2" />
-            <path d="M19.25 12h2" />
-            <path d="m4.22 19.78 1.42-1.42" />
-            <path d="m18.36 5.64 1.42-1.42" />
-          </svg>
-        </span>
-        <span>{{ themeToggleText }}</span>
-      </button>
 
       <div class="sidebar-user">
         <div class="sidebar-user__avatar" aria-hidden="true">

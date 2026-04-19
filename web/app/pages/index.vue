@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import RecentTransactionsTable from '~/components/transactions/RecentTransactionsTable.vue'
 import DashboardStatCard from '~/components/ui/DashboardStatCard.vue'
 import { useAgentsStore } from '~/stores/agents'
@@ -12,6 +12,7 @@ import {
 
 const agentsStore = useAgentsStore()
 const transactionsStore = useTransactionsStore()
+const hasCompletedInitialLoad = ref(false)
 
 const {
   error: agentsError,
@@ -60,24 +61,33 @@ const isLoading = computed(
 const hasAnyData = computed(
   () => agents.value.length > 0 || transactions.value.length > 0,
 )
-const showSkeletons = computed(() => isLoading.value && !hasAnyData.value)
 const errorMessage = computed(
   () => transactionsError.value || agentsError.value,
 )
+const showSkeletons = computed(
+  () =>
+    !hasCompletedInitialLoad.value &&
+    !hasAnyData.value &&
+    !errorMessage.value,
+)
 
 async function loadDashboard(forceRefresh = false): Promise<void> {
-  const results = await Promise.allSettled([
-    transactionsStore.fetchTransactions(forceRefresh),
-    agentsStore.fetchAgents({
-      forceRefresh,
-      status: 'active',
-    }),
-  ])
+  try {
+    const results = await Promise.allSettled([
+      transactionsStore.fetchTransactions(forceRefresh),
+      agentsStore.fetchAgents({
+        forceRefresh,
+        status: 'active',
+      }),
+    ])
 
-  const rejectedResult = results.find((result) => result.status === 'rejected')
+    const rejectedResult = results.find((result) => result.status === 'rejected')
 
-  if (rejectedResult?.status === 'rejected') {
-    throw rejectedResult.reason
+    if (rejectedResult?.status === 'rejected') {
+      throw rejectedResult.reason
+    }
+  } finally {
+    hasCompletedInitialLoad.value = true
   }
 }
 

@@ -22,6 +22,7 @@ const {
 const searchQuery = ref('')
 const selectedStatus = ref<AgentStatusFilter>('all')
 const currentPage = ref(1)
+const hasCompletedInitialLoad = ref(false)
 const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -32,7 +33,10 @@ const hasActiveFilters = computed(
   () => hasSearch.value || selectedStatus.value !== 'all',
 )
 const showSkeletonRows = computed(
-  () => isLoading.value && agents.value.length === 0,
+  () =>
+    !hasCompletedInitialLoad.value &&
+    agents.value.length === 0 &&
+    !error.value,
 )
 const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
 const resultScopeLabel = computed(() => {
@@ -78,15 +82,19 @@ const emptyStateDescription = computed(() => {
 })
 
 async function loadAgents(forceRefresh = false): Promise<void> {
-  await agentsStore
-    .fetchAgents({
-      forceRefresh,
-      limit: pageSize,
-      page: currentPage.value,
-      search: normalizedSearchQuery.value || undefined,
-      status: selectedStatus.value,
-    })
-    .catch(() => undefined)
+  try {
+    await agentsStore
+      .fetchAgents({
+        forceRefresh,
+        limit: pageSize,
+        page: currentPage.value,
+        search: normalizedSearchQuery.value || undefined,
+        status: selectedStatus.value,
+      })
+      .catch(() => undefined)
+  } finally {
+    hasCompletedInitialLoad.value = true
+  }
 }
 
 async function retryAgents(): Promise<void> {

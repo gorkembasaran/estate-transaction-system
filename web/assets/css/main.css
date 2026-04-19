@@ -16,6 +16,57 @@ a {
   text-decoration: none;
 }
 
+.form-skeleton {
+  display: grid;
+  gap: 18px;
+}
+
+.form-skeleton__field {
+  display: grid;
+  gap: 8px;
+}
+
+.form-skeleton__line,
+.form-skeleton__input,
+.form-skeleton__button {
+  animation: skeleton-pulse 1.25s ease-in-out infinite;
+  background: #e5e7eb;
+  border-radius: 8px;
+  display: block;
+}
+
+.form-skeleton__line {
+  height: 14px;
+  width: min(180px, 42%);
+}
+
+.form-skeleton__input {
+  height: 48px;
+  width: 100%;
+}
+
+.form-skeleton__actions {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  margin-top: 10px;
+}
+
+.form-skeleton__button {
+  height: 46px;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.64;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .app-shell {
   background: #f8fafc;
   min-height: 100vh;
@@ -38,6 +89,13 @@ a {
 .sidebar-brand {
   border-bottom: 1px solid #edf0f3;
   padding: 26px 24px 28px;
+}
+
+.sidebar-brand__top {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
 }
 
 .brand {
@@ -101,36 +159,48 @@ a {
   align-items: center;
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 999px;
   color: #374151;
   cursor: pointer;
   display: inline-flex;
+  flex: 0 0 auto;
   font: inherit;
-  font-size: 14px;
-  font-weight: 800;
-  gap: 10px;
-  margin: 18px 14px 0;
-  min-height: 44px;
-  padding: 0 16px;
+  height: 36px;
+  justify-content: center;
+  line-height: 0;
+  min-height: 0;
+  padding-bottom: 10px;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+  width: 36px;
 }
 
 .theme-toggle:hover {
+  background: #f8fafc;
   border-color: #c7d2fe;
   color: #4f46e5;
+  transform: translateY(-1px);
 }
 
 .theme-toggle__icon {
-  align-items: center;
   color: currentColor;
-  display: inline-flex;
-  height: 20px;
-  justify-content: center;
-  width: 20px;
+  display: grid;
+  height: 18px;
+  place-items: center;
+  width: 18px;
 }
 
 .theme-toggle__icon svg {
-  height: 20px;
-  width: 20px;
+  display: block;
+  height: 18px;
+  width: 18px;
+}
+
+.theme-toggle__moon {
+  transform: translate(1.5px, -1px);
 }
 
 .theme-toggle__icon svg * {
@@ -246,10 +316,6 @@ a {
     flex-direction: row;
     overflow-x: auto;
     padding: 0 18px 18px;
-  }
-
-  .theme-toggle {
-    margin: 0 18px 18px;
   }
 
   .nav-links a {
@@ -369,6 +435,15 @@ html[data-theme='dark'] .checkbox-copy small {
   color: #94a3b8 !important;
 }
 
+html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__value {
+  color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__label,
+html[data-theme='dark'] .stat-card:not(.stat-card--accent) .stat-card__support {
+  color: #cbd5e1 !important;
+}
+
 html[data-theme='dark'] .nav-links a,
 html[data-theme='dark'] .theme-toggle,
 html[data-theme='dark'] .secondary-button,
@@ -424,6 +499,9 @@ html[data-theme='dark'] .agent-result-note,
 html[data-theme='dark'] .form-loading,
 html[data-theme='dark'] .form-note,
 html[data-theme='dark'] .breakdown-empty,
+html[data-theme='dark'] .form-skeleton__line,
+html[data-theme='dark'] .form-skeleton__input,
+html[data-theme='dark'] .form-skeleton__button,
 html[data-theme='dark'] .detail-skeleton-card span,
 html[data-theme='dark'] .detail-skeleton-card small,
 html[data-theme='dark'] .table-skeleton {

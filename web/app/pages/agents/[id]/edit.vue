@@ -35,6 +35,7 @@ const fieldErrors = reactive<AgentFormErrors>({})
 const formError = ref<string | null>(null)
 const isSubmitting = ref(false)
 const fullNameInput = ref<HTMLInputElement | null>(null)
+const hasCompletedInitialLoad = ref(false)
 
 const agentId = computed(() => {
   const id = route.params.id
@@ -44,12 +45,21 @@ const agentId = computed(() => {
 const pageAgent = computed(() =>
   selectedAgent.value?._id === agentId.value ? selectedAgent.value : null,
 )
-const isInitialLoading = computed(() => isLoading.value && !pageAgent.value)
+const isInitialLoading = computed(
+  () =>
+    !hasCompletedInitialLoad.value &&
+    !pageAgent.value &&
+    !error.value,
+)
 const canSubmit = computed(() => !isSubmitting.value && Boolean(pageAgent.value))
 
 async function loadAgent(): Promise<void> {
-  await agentsStore.fetchAgentById(agentId.value)
-  populateForm(agentsStore.selectedAgent)
+  try {
+    await agentsStore.fetchAgentById(agentId.value)
+    populateForm(agentsStore.selectedAgent)
+  } finally {
+    hasCompletedInitialLoad.value = true
+  }
 }
 
 function populateForm(agent: Agent | null): void {
@@ -241,8 +251,19 @@ onMounted(async () => {
         {{ formError }}
       </div>
 
-      <div v-if="isInitialLoading" class="form-loading">
-        Loading agent...
+      <div
+        v-if="isInitialLoading"
+        class="form-skeleton"
+        aria-label="Loading agent form"
+      >
+        <div v-for="index in 3" :key="index" class="form-skeleton__field">
+          <span class="form-skeleton__line" />
+          <span class="form-skeleton__input" />
+        </div>
+        <div class="form-skeleton__actions">
+          <span class="form-skeleton__button" />
+          <span class="form-skeleton__button" />
+        </div>
       </div>
 
       <template v-else>
