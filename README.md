@@ -25,8 +25,9 @@ Frontend:
 
 Deployment:
 
-- Not completed
-- No live API URL or live frontend URL is documented in this repository yet
+- Live frontend is available at `https://estate-transaction-system.vercel.app/`
+- Live backend API is available at `https://estate-transaction-api.onrender.com/`
+- Production backend configuration is environment-based and uses MongoDB Atlas through `MONGODB_URI`
 
 ## Tech Stack
 
@@ -156,6 +157,13 @@ http://127.0.0.1:3000
 
 The frontend is expected to run against the local backend during development.
 
+Production URLs:
+
+```text
+Frontend: https://estate-transaction-system.vercel.app/
+Backend API: https://estate-transaction-api.onrender.com/
+```
+
 ## Available Application Areas
 
 - Dashboard
@@ -246,7 +254,7 @@ Frontend automated tests are not currently documented in this repository.
 
 ## Current Limitations / Notes
 
-- Deployment is not completed and no live URLs are documented.
+- Live frontend and backend API URLs are documented; provider-specific deployment automation is intentionally minimal.
 - Dashboard revenue is intentionally based on loaded completed transaction results, not a dedicated backend aggregate endpoint.
 - Frontend and backend documentation are maintained separately; some detailed docs may need follow-up updates as implementation evolves.
 - Swagger, Docker, authentication, CI/CD, and seed scripts are not currently documented as implemented features.

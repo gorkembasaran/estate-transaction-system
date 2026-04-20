@@ -24,7 +24,6 @@ Implemented:
 Not currently implemented:
 
 - frontend automated tests
-- deployment documentation or live frontend URL
 - authentication or authorization UI
 - dedicated dashboard aggregate API integration for global revenue totals
 
@@ -53,12 +52,12 @@ The backend API base URL is configured in `nuxt.config.ts` through runtime confi
 ```ts
 runtimeConfig: {
   public: {
-    apiBase: process.env.NUXT_PUBLIC_API_BASE?.trim() || defaultApiBase,
+    apiBase: defaultApiBase,
   },
 }
 ```
 
-The Axios plugin reads `config.public.apiBase`, normalizes trailing slashes, and creates the injected `$api` client.
+Nuxt overrides this public runtime config value from `NUXT_PUBLIC_API_BASE` when it is provided. The Axios plugin reads `config.public.apiBase`, normalizes trailing slashes, and creates the injected `$api` client.
 
 Default local API base:
 
@@ -82,6 +81,12 @@ For production frontend deployments, set:
 
 ```text
 NUXT_PUBLIC_API_BASE=https://estate-transaction-api.onrender.com/
+```
+
+Production frontend URL:
+
+```text
+https://estate-transaction-system.vercel.app/
 ```
 
 If the runtime config value is missing or empty, the plugin falls back to the local default.
@@ -302,7 +307,6 @@ An inline head script initializes the theme before page paint using local storag
 ## Current Limitations / Notes
 
 - Frontend automated tests are not currently implemented.
-- No deployment or live frontend URL is documented.
 - The dashboard revenue card is based on loaded completed results, not a dedicated backend aggregate endpoint.
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
 - Authentication and authorization UI are not implemented.

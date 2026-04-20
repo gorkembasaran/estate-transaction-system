@@ -59,7 +59,6 @@ The core problem is more than CRUD. The important design concern is keeping life
 - Swagger/OpenAPI generation
 - Docker configuration
 - CI/CD configuration
-- deployment documentation or live URLs
 - seed scripts
 - dedicated backend dashboard aggregate endpoint
 - frontend automated tests
@@ -94,6 +93,11 @@ The frontend is a Nuxt application structured around pages, typed services, Pini
 - Reusable components handle repeated UI patterns such as stage badges, dashboard cards, recent transaction rows, and agent search.
 
 The frontend does not create parallel data sources. It consumes the backend API and keeps UI state aligned with paginated and filtered backend responses.
+
+Current production entry points are documented for the submission:
+
+- Frontend: `https://estate-transaction-system.vercel.app/`
+- Backend API: `https://estate-transaction-api.onrender.com/`
 
 ## Module and Application Structure
 
@@ -528,7 +532,7 @@ Current trade-offs and limitations:
 - Authentication and authorization are not implemented.
 - Swagger/OpenAPI generation is not implemented.
 - Docker and CI/CD configuration are not implemented.
-- Deployment documentation and live URLs are not present.
+- Deployment uses Vercel for the frontend and Render for the backend API; provider-specific automation such as Docker or CI/CD is not implemented.
 - There is no dedicated backend dashboard aggregate endpoint.
 - Dashboard revenue is based on loaded completed results rather than a backend aggregate.
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
@@ -542,7 +546,7 @@ These limitations are intentionally described as absent rather than implied as c
 
 Realistic next improvements include:
 
-- deployment setup and documentation
+- deployment hardening, monitoring, and custom-domain setup
 - backend aggregate endpoint for dashboard summary and revenue metrics
 - Swagger/OpenAPI documentation
 - frontend automated tests

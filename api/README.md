@@ -11,7 +11,7 @@ The backend manages agents, transactions, lifecycle stage transitions, and commi
 - Pagination, filtering, and sorting are implemented where described below.
 - Service-layer unit tests cover the main business logic.
 - MongoDB integration is configured through Mongoose.
-- Deployment is not documented in this repository.
+- Production backend API is available at `https://estate-transaction-api.onrender.com/`.
 
 ## Tech Stack
 
@@ -44,6 +44,12 @@ If `API_PREFIX=api` is configured, the API base becomes:
 
 ```text
 http://127.0.0.1:3000/api
+```
+
+Production API base URL:
+
+```text
+https://estate-transaction-api.onrender.com
 ```
 
 ## Implemented Backend Features
@@ -454,7 +460,7 @@ In production, CORS is disabled unless `FRONTEND_ORIGIN` is configured.
 Production deployments should set `FRONTEND_ORIGIN` to the deployed frontend origin:
 
 ```text
-FRONTEND_ORIGIN=https://your-frontend-domain.example.com
+FRONTEND_ORIGIN=https://estate-transaction-system.vercel.app
 ```
 
 Multiple allowed origins can be provided as a comma-separated list.
@@ -596,7 +602,6 @@ The following are not currently implemented in this backend:
 - Swagger/OpenAPI generation
 - Docker configuration
 - CI/CD configuration
-- deployment runbook
 - seed scripts
 - dedicated dashboard aggregate endpoint
 - implemented e2e test specs
