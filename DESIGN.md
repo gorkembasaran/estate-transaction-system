@@ -555,6 +555,72 @@ Realistic next improvements include:
 - more advanced query caching if the UI grows beyond one active list state per resource
 - seed script for demo data
 
+## Deployment Architecture
+
+The system is deployed using a cloud-based architecture with separate hosting providers for the frontend and backend.
+
+Frontend Deployment:
+
+The Nuxt frontend is deployed on Vercel.
+
+Production URL:
+
+```text
+https://estate-transaction-system.vercel.app/
+```
+
+The Vercel deployment builds the frontend using the production build process and serves the application through a globally distributed edge network.
+
+Backend Deployment:
+
+The NestJS backend API is deployed on Render.
+
+Production API URL:
+
+```text
+https://estate-transaction-api.onrender.com/
+```
+
+Render handles:
+
+- backend build execution
+- environment variable injection
+- process startup
+- public API exposure
+
+Database Deployment:
+
+MongoDB Atlas is used as the managed cloud database provider.
+
+The backend connects to MongoDB Atlas using environment-based configuration. Database connection credentials are not stored in source code.
+
+Environment Separation:
+
+The application supports environment-based configuration through environment variables.
+
+Typical variables include:
+
+- API base URL
+- MongoDB connection URI
+- CORS origin configuration
+- runtime environment flags
+
+Frontend runtime configuration uses:
+
+```text
+NUXT_PUBLIC_API_BASE
+```
+
+Backend runtime configuration uses:
+
+```text
+MONGODB_URI
+FRONTEND_ORIGIN
+NODE_ENV
+```
+
+This separation allows the system to run correctly in both development and production environments.
+
 ## Conclusion
 
 The current design centers on explicit lifecycle enforcement, isolated commission logic, embedded transaction history, and embedded financial breakdown snapshots. The backend exposes query-capable list endpoints and keeps business rules in testable services. The frontend consumes those APIs through typed services and Pinia stores, with usable dashboard, transaction, and agent flows.

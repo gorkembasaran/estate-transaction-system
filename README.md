@@ -29,6 +29,38 @@ Deployment:
 - Live backend API is available at `https://estate-transaction-api.onrender.com/`
 - Production backend configuration is environment-based and uses MongoDB Atlas through `MONGODB_URI`
 
+## Live Deployment
+
+The application is deployed and accessible through public production environments.
+
+Frontend Application:
+
+```text
+https://estate-transaction-system.vercel.app
+```
+
+Backend API:
+
+```text
+https://estate-transaction-api.onrender.com
+```
+
+Deployment Platforms:
+
+- Frontend: Vercel
+- Backend API: Render
+- Database: MongoDB Atlas
+
+## API Health Check
+
+The backend API can be verified using:
+
+```text
+https://estate-transaction-api.onrender.com/agents
+```
+
+This endpoint confirms that the API is running and accessible. It returns paginated agent results and can be used as a basic availability test.
+
 ## Tech Stack
 
 Backend:
@@ -123,6 +155,28 @@ estate-transaction-system/
 - Node.js, recommended LTS version
 - npm
 - MongoDB local instance or MongoDB Atlas connection
+
+## Environment Variables Overview
+
+Environment variables control runtime configuration for local development and production deployment. Both projects include `.env.example` files that document the expected values without storing secrets.
+
+Backend variables:
+
+```env
+NODE_ENV=development
+PORT=3000
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/
+MONGODB_DATABASE=estate_transaction_system
+FRONTEND_ORIGIN=https://estate-transaction-system.vercel.app
+API_PREFIX=
+```
+
+Frontend variables:
+
+```env
+NUXT_PUBLIC_API_BASE=https://estate-transaction-api.onrender.com
+NUXT_PUBLIC_API_TIMEOUT_MS=60000
+```
 
 ## Backend Quick Start
 

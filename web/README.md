@@ -59,6 +59,8 @@ runtimeConfig: {
 
 Nuxt overrides this public runtime config value from `NUXT_PUBLIC_API_BASE` when it is provided. The Axios plugin reads `config.public.apiBase`, normalizes trailing slashes, and creates the injected `$api` client.
 
+The API timeout is controlled by `NUXT_PUBLIC_API_TIMEOUT_MS`. The default is `60000` milliseconds, which gives the deployed backend enough time to respond during slower cold starts.
+
 Default local API base:
 
 ```text
@@ -81,6 +83,7 @@ For production frontend deployments, set:
 
 ```text
 NUXT_PUBLIC_API_BASE=https://estate-transaction-api.onrender.com/
+NUXT_PUBLIC_API_TIMEOUT_MS=60000
 ```
 
 Production frontend URL:
