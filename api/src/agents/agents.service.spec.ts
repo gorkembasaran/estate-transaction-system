@@ -91,7 +91,7 @@ describe('AgentsService', () => {
     const result = await service.getAllAgents({ page: 1, limit: 10 });
 
     expect(agentModel.find).toHaveBeenCalledWith({});
-    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(query.skip).toHaveBeenCalledWith(0);
     expect(query.limit).toHaveBeenCalledWith(10);
     expect(query.exec).toHaveBeenCalledTimes(1);
@@ -129,7 +129,7 @@ describe('AgentsService', () => {
     });
 
     expect(agentModel.find).toHaveBeenCalledWith({});
-    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
     expect(query.skip).toHaveBeenCalledWith(0);
     expect(query.limit).toHaveBeenCalledWith(10);
     expect(query.exec).toHaveBeenCalledTimes(1);

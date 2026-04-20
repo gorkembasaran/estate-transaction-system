@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useAgentsStore } from '~/stores/agents'
-import type { Agent, AgentStatusFilter } from '~/types/agent'
+import type { Agent, AgentStatusFilter, GetAgentsParams } from '~/types/agent'
 import { formatDate } from '~/utils/transaction-format'
 
 const statusOptions: Array<{ label: string; value: AgentStatusFilter }> = [
@@ -16,13 +16,13 @@ const {
   error,
   isLoading,
   items: agents,
+  lastFetchParams,
   pagination,
 } = storeToRefs(agentsStore)
 
 const searchQuery = ref('')
 const selectedStatus = ref<AgentStatusFilter>('all')
 const currentPage = ref(1)
-const hasCompletedInitialLoad = ref(false)
 const pageSize = 10
 
 let searchDebounce: ReturnType<typeof setTimeout> | null = null
@@ -32,13 +32,26 @@ const hasSearch = computed(() => normalizedSearchQuery.value.length > 0)
 const hasActiveFilters = computed(
   () => hasSearch.value || selectedStatus.value !== 'all',
 )
+const currentFetchParams = computed(() => ({
+  limit: pageSize,
+  page: currentPage.value,
+  search: normalizedSearchQuery.value || undefined,
+  status: selectedStatus.value,
+}))
+const isCurrentQueryLoaded = computed(() =>
+  doFetchParamsMatch(lastFetchParams.value, currentFetchParams.value),
+)
+const displayedAgents = computed(() =>
+  isCurrentQueryLoaded.value ? agents.value : [],
+)
 const showSkeletonRows = computed(
   () =>
-    !hasCompletedInitialLoad.value &&
-    agents.value.length === 0 &&
+    !isCurrentQueryLoaded.value &&
     !error.value,
 )
-const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
+const hasMultiplePages = computed(
+  () => isCurrentQueryLoaded.value && pagination.value.totalPages > 1,
+)
 const resultScopeLabel = computed(() => {
   if (selectedStatus.value === 'active') {
     return 'active agent'
@@ -51,6 +64,14 @@ const resultScopeLabel = computed(() => {
   return 'agent'
 })
 const resultSummary = computed(() => {
+  if (!isCurrentQueryLoaded.value && error.value) {
+    return 'Could not load agents'
+  }
+
+  if (!isCurrentQueryLoaded.value) {
+    return 'Loading agents...'
+  }
+
   const scopeLabel = `${resultScopeLabel.value}${
     pagination.value.totalItems === 1 ? '' : 's'
   }`
@@ -60,7 +81,7 @@ const resultSummary = computed(() => {
   }
 
   const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
-  const endItem = startItem + agents.value.length - 1
+  const endItem = startItem + displayedAgents.value.length - 1
 
   return `Showing ${startItem}-${endItem} of ${
     pagination.value.totalItems
@@ -82,19 +103,15 @@ const emptyStateDescription = computed(() => {
 })
 
 async function loadAgents(forceRefresh = false): Promise<void> {
-  try {
-    await agentsStore
-      .fetchAgents({
-        forceRefresh,
-        limit: pageSize,
-        page: currentPage.value,
-        search: normalizedSearchQuery.value || undefined,
-        status: selectedStatus.value,
-      })
-      .catch(() => undefined)
-  } finally {
-    hasCompletedInitialLoad.value = true
-  }
+  await agentsStore
+    .fetchAgents({
+      forceRefresh,
+      limit: pageSize,
+      page: currentPage.value,
+      search: normalizedSearchQuery.value || undefined,
+      status: selectedStatus.value,
+    })
+    .catch(() => undefined)
 }
 
 async function retryAgents(): Promise<void> {
@@ -142,6 +159,27 @@ function resetToFirstPageAndLoad(): void {
   }
 
   currentPage.value = 1
+}
+
+function doFetchParamsMatch(
+  loadedParams: GetAgentsParams | null,
+  expectedParams: {
+    limit: number
+    page: number
+    search?: string
+    status: AgentStatusFilter
+  },
+): boolean {
+  if (!loadedParams) {
+    return false
+  }
+
+  return (
+    loadedParams.limit === expectedParams.limit &&
+    loadedParams.page === expectedParams.page &&
+    (loadedParams.search || undefined) === expectedParams.search &&
+    (loadedParams.status ?? 'all') === expectedParams.status
+  )
 }
 
 onMounted(() => {
@@ -257,8 +295,8 @@ watch(currentPage, () => {
             </tr>
           </tbody>
 
-          <tbody v-else-if="agents.length > 0">
-            <tr v-for="agent in agents" :key="agent._id">
+          <tbody v-else-if="displayedAgents.length > 0">
+            <tr v-for="agent in displayedAgents" :key="agent._id">
               <td>
                 <div class="agent-name-cell">
                   <span class="agent-avatar" aria-hidden="true">
