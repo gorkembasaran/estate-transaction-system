@@ -362,6 +362,8 @@ html[data-theme='dark'] .stat-card__value,
 html[data-theme='dark'] .stat-card__value-metric,
 html[data-theme='dark'] .form-field input,
 html[data-theme='dark'] .form-field select,
+html[data-theme='dark'] .stage-select,
+html[data-theme='dark'] .status-select,
 html[data-theme='dark'] .agent-combobox-copy strong,
 html[data-theme='dark'] .agent-option strong {
   color: #f8fafc !important;
@@ -441,6 +443,28 @@ html[data-theme='dark'] .search-field input,
 html[data-theme='dark'] .agent-search-field input {
   background: transparent !important;
   color: #f8fafc !important;
+}
+
+html[data-theme='dark'] .stage-select,
+html[data-theme='dark'] .status-select,
+html[data-theme='dark'] .form-field select {
+  color-scheme: dark;
+}
+
+html[data-theme='dark'] .status-select {
+  background:
+    linear-gradient(45deg, transparent 50%, #94a3b8 50%) right 18px top 20px /
+      7px 7px no-repeat,
+    linear-gradient(135deg, #94a3b8 50%, transparent 50%) right 12px top 20px /
+      7px 7px no-repeat,
+    #0f172a !important;
+}
+
+html[data-theme='dark'] .stage-select option,
+html[data-theme='dark'] .status-select option,
+html[data-theme='dark'] .form-field select option {
+  background: #0f172a;
+  color: #f8fafc;
 }
 
 html[data-theme='dark'] .search-field input::placeholder,
