@@ -22,6 +22,7 @@ The backend manages agents, transactions, lifecycle stage transitions, and commi
 - Mongoose
 - class-validator
 - class-transformer
+- Swagger / OpenAPI
 - Jest
 
 ## Runtime Requirements
@@ -52,6 +53,28 @@ Production API base URL:
 https://estate-transaction-api.onrender.com
 ```
 
+## API Documentation
+
+Swagger UI is available at:
+
+```text
+http://127.0.0.1:3000/docs
+```
+
+The generated OpenAPI JSON document is available at:
+
+```text
+http://127.0.0.1:3000/docs-json
+```
+
+Production Swagger UI:
+
+```text
+https://estate-transaction-api.onrender.com/docs
+```
+
+If `API_PREFIX` is configured, REST API routes are prefixed, but the Swagger documentation remains available at `/docs`.
+
 ## Implemented Backend Features
 
 ### Agents Module
@@ -68,6 +91,7 @@ Implemented behavior:
 - Prevent duplicate agent emails.
 - Validate agent existence before transaction creation.
 - Reject invalid ObjectId values before database lookup.
+- Swagger/OpenAPI metadata for agent endpoints and DTOs.
 
 ### Transactions Module
 
@@ -87,6 +111,7 @@ Implemented behavior:
 - Store stage history in the transaction document.
 - Calculate financial breakdown when a transaction reaches `completed`.
 - Retrieve stored transaction breakdown.
+- Swagger/OpenAPI metadata for transaction endpoints, query params, and DTOs.
 
 ## Transaction Lifecycle
 
@@ -599,7 +624,6 @@ Controllers, DTOs, modules, schemas, config files, database setup, bootstrap fil
 The following are not currently implemented in this backend:
 
 - authentication or authorization
-- Swagger/OpenAPI generation
 - Docker configuration
 - CI/CD configuration
 - seed scripts

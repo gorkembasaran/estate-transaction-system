@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -16,15 +17,18 @@ async function bootstrap() {
   configureCors(app, configService);
   configureGlobalPrefix(app, configService);
   configureValidation(app);
+  configureSwagger(app);
   app.enableShutdownHooks();
 
   const port = configService.getOrThrow<number>('PORT');
   const host = configService.getOrThrow<string>('HOST');
   const baseUrl = getBaseUrl(host, port, configService);
+  const rootUrl = getRootUrl(host, port);
 
   await app.listen(port, host);
 
   Logger.log(`API is running at ${baseUrl}`, 'Bootstrap');
+  Logger.log(`Swagger docs are available at ${rootUrl}/docs`, 'Bootstrap');
 }
 
 function configureCors(app: INestApplication, configService: ConfigService) {
@@ -43,10 +47,7 @@ function createCorsOriginMatcher(frontendOrigin?: string, nodeEnv?: string) {
     return configuredOrigins.length > 0 ? configuredOrigins : false;
   }
 
-  const developmentOrigins = [
-    'http://127.0.0.1:3001',
-    'http://localhost:3001',
-  ];
+  const developmentOrigins = ['http://127.0.0.1:3001', 'http://localhost:3001'];
 
   return Array.from(new Set([...configuredOrigins, ...developmentOrigins]));
 }
@@ -89,16 +90,36 @@ function configureValidation(app: INestApplication) {
   );
 }
 
-function getBaseUrl(
-  host: string,
-  port: number,
-  configService: ConfigService,
-) {
+function configureSwagger(app: INestApplication) {
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Estate Transaction API')
+    .setDescription(
+      'REST API for managing estate agents, transactions, lifecycle transitions, and commission breakdowns.',
+    )
+    .setVersion('1.0')
+    .addTag('Agents')
+    .addTag('Transactions')
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+
+  SwaggerModule.setup('docs', app, document, {
+    customSiteTitle: 'Estate Transaction API Docs',
+    jsonDocumentUrl: 'docs-json',
+  });
+}
+
+function getBaseUrl(host: string, port: number, configService: ConfigService) {
   const apiPrefix = configService.get<string>('API_PREFIX');
   const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
   const rootUrl = `http://${displayHost}:${port}`;
 
   return apiPrefix ? `${rootUrl}/${apiPrefix}` : rootUrl;
+}
+
+function getRootUrl(host: string, port: number) {
+  const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
+
+  return `http://${displayHost}:${port}`;
 }
 
 function flattenValidationErrors(errors: ValidationError[]) {

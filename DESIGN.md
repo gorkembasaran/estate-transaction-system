@@ -40,6 +40,7 @@ The core problem is more than CRUD. The important design concern is keeping life
 - embedded financial breakdown storage
 - embedded stage history storage
 - backend pagination, filtering, search, and sorting for list endpoints
+- Swagger/OpenAPI documentation for the backend API
 - global request validation and environment validation
 - service-level backend unit tests
 - service-focused backend coverage configuration
@@ -56,7 +57,6 @@ The core problem is more than CRUD. The important design concern is keeping life
 ### Not Implemented / Out of Scope
 
 - authentication or authorization
-- Swagger/OpenAPI generation
 - Docker configuration
 - CI/CD configuration
 - seed scripts
@@ -530,7 +530,6 @@ Frontend automated tests are not currently implemented. The backend package cont
 Current trade-offs and limitations:
 
 - Authentication and authorization are not implemented.
-- Swagger/OpenAPI generation is not implemented.
 - Docker and CI/CD configuration are not implemented.
 - Deployment uses Vercel for the frontend and Render for the backend API; provider-specific automation such as Docker or CI/CD is not implemented.
 - There is no dedicated backend dashboard aggregate endpoint.
@@ -548,7 +547,6 @@ Realistic next improvements include:
 
 - deployment hardening, monitoring, and custom-domain setup
 - backend aggregate endpoint for dashboard summary and revenue metrics
-- Swagger/OpenAPI documentation
 - frontend automated tests
 - e2e tests for the main API and UI flows
 - authentication and authorization if the product scope expands

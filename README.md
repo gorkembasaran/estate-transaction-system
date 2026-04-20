@@ -113,6 +113,7 @@ Backend:
 - Calculate commission breakdowns
 - Store embedded stage history and financial breakdowns
 - Paginate, search, filter, and sort backend list endpoints
+- Swagger/OpenAPI documentation for the backend API
 - Handle validation, duplicate email, invalid id, not found, invalid transition, and negative fee errors
 - Service-layer unit tests for agents, transactions, commission, and stage transition logic
 
@@ -311,4 +312,4 @@ Frontend automated tests are not currently documented in this repository.
 - Live frontend and backend API URLs are documented; provider-specific deployment automation is intentionally minimal.
 - Dashboard revenue is intentionally based on loaded completed transaction results, not a dedicated backend aggregate endpoint.
 - Frontend and backend documentation are maintained separately; some detailed docs may need follow-up updates as implementation evolves.
-- Swagger, Docker, authentication, CI/CD, and seed scripts are not currently documented as implemented features.
+- Docker, authentication, CI/CD, and seed scripts are not currently documented as implemented features.

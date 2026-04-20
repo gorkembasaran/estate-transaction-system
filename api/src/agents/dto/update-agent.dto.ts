@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 
 export class UpdateAgentDto {
+  @ApiPropertyOptional({ example: 'Sarah Johnson', minLength: 2 })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
   @IsNotEmpty()
@@ -16,6 +18,7 @@ export class UpdateAgentDto {
   @IsOptional()
   fullName?: string;
 
+  @ApiPropertyOptional({ example: 'sarah.johnson@example.com' })
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
@@ -24,6 +27,7 @@ export class UpdateAgentDto {
   @IsOptional()
   email?: string;
 
+  @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
