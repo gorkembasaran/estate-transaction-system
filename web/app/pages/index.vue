@@ -13,17 +13,16 @@ import {
 const agentsStore = useAgentsStore()
 const transactionsStore = useTransactionsStore()
 const hasCompletedInitialLoad = ref(false)
-const completedTransactionsCount = ref(0)
+const isDashboardLoading = ref(true)
+const completedTransactionsCount = ref<number | null>(null)
 
 const {
   error: agentsError,
-  isLoading: agentsLoading,
   items: agents,
   pagination: agentsPagination,
 } = storeToRefs(agentsStore)
 const {
   error: transactionsError,
-  isLoading: transactionsLoading,
   items: transactions,
   pagination: transactionsPagination,
 } = storeToRefs(transactionsStore)
@@ -31,7 +30,7 @@ const {
 const totalTransactions = computed(
   () => transactionsPagination.value.totalItems,
 )
-const completedTransactions = computed(() => completedTransactionsCount.value)
+const completedTransactions = computed(() => completedTransactionsCount.value ?? 0)
 const activeTransactions = computed(
   () => Math.max(totalTransactions.value - completedTransactions.value, 0),
 )
@@ -52,23 +51,19 @@ const completedTransactionsSupportingLabel = computed(
     `${completedTransactions.value} of ${totalTransactions.value} transactions completed`,
 )
 const recentTransactions = computed(() => transactions.value.slice(0, 5))
-const isLoading = computed(
-  () => agentsLoading.value || transactionsLoading.value,
-)
-const hasAnyData = computed(
-  () => agents.value.length > 0 || transactions.value.length > 0,
-)
 const errorMessage = computed(
   () => transactionsError.value || agentsError.value,
 )
 const showSkeletons = computed(
   () =>
     !hasCompletedInitialLoad.value &&
-    !hasAnyData.value &&
+    isDashboardLoading.value &&
     !errorMessage.value,
 )
 
 async function loadDashboard(forceRefresh = false): Promise<void> {
+  isDashboardLoading.value = true
+
   try {
     const results = await Promise.allSettled([
       transactionsStore.fetchTransactions({
@@ -103,6 +98,7 @@ async function loadDashboard(forceRefresh = false): Promise<void> {
     }
   } finally {
     hasCompletedInitialLoad.value = true
+    isDashboardLoading.value = false
   }
 }
 
