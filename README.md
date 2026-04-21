@@ -298,7 +298,7 @@ src/agents/**/*.service.ts
 src/transactions/**/*.service.ts
 ```
 
-Frontend automated tests are not currently documented in this repository.
+Frontend unit/component tests are implemented under `web/` with Vitest and cover shared formatting utilities, store error handling, reusable UI components, async agent combobox behavior, and query-aware store mutation flows.
 
 ## Documentation Map
 

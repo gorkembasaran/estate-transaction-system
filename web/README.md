@@ -20,12 +20,13 @@ Implemented:
 - async active-agent search in the create transaction flow
 - loading, error, and empty states on the main data pages
 - query-aware list refresh after create/update mutations
+- frontend unit/component tests with Vitest for shared utilities, reusable components, and Pinia stores
 
 Not currently implemented:
 
-- frontend automated tests
 - authentication or authorization UI
 - dedicated dashboard aggregate API integration for global revenue totals
+- browser-level e2e test coverage
 
 ## Tech Stack
 
@@ -309,11 +310,11 @@ An inline head script initializes the theme before page paint using local storag
 
 ## Current Limitations / Notes
 
-- Frontend automated tests are not currently implemented.
 - The dashboard revenue card is based on loaded completed results, not a dedicated backend aggregate endpoint.
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
 - Authentication and authorization UI are not implemented.
 - The frontend depends on the backend API being available for data-backed pages.
+- Browser-level e2e coverage is not implemented yet.
 
 ## Available Scripts
 
@@ -339,6 +340,24 @@ Preview production output:
 
 ```bash
 npm run preview
+```
+
+Run frontend unit/component tests:
+
+```bash
+npm run test
+```
+
+Run frontend test coverage:
+
+```bash
+npm run test:coverage
+```
+
+Run Vitest in watch mode:
+
+```bash
+npm run test:watch
 ```
 
 Nuxt preparation after install:

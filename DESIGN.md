@@ -61,7 +61,7 @@ The core problem is more than CRUD. The important design concern is keeping life
 - CI/CD configuration
 - seed scripts
 - dedicated backend dashboard aggregate endpoint
-- frontend automated tests
+- browser-level frontend e2e tests
 - implemented e2e test specs
 
 The backend package includes an e2e test script and Jest e2e configuration, but no e2e spec file is currently implemented.
@@ -523,7 +523,13 @@ transactions/**/*.service.ts
 
 This keeps the coverage metric focused on the domain logic that matters most in this case.
 
-Frontend automated tests are not currently implemented. The backend package contains an e2e test script/configuration, but no implemented e2e spec file is currently present.
+Frontend unit/component tests are implemented with Vitest around the current highest-value frontend logic:
+
+- shared formatting and error-handling utilities
+- reusable UI components such as `StageBadge`, `DashboardStatCard`, and `AgentCombobox`
+- Pinia store behavior for paginated fetches, async agent search, and query-aware mutation refresh
+
+The backend package still contains an e2e test script/configuration without implemented e2e specs, and browser-level frontend e2e coverage is not yet present.
 
 ## Trade-Offs and Current Limitations
 
@@ -535,8 +541,8 @@ Current trade-offs and limitations:
 - There is no dedicated backend dashboard aggregate endpoint.
 - Dashboard revenue is based on loaded completed results rather than a backend aggregate.
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
-- Frontend automated tests are not implemented.
 - Implemented e2e test specs are not present.
+- Browser-level frontend e2e tests are not present.
 - Seed scripts are not implemented.
 
 These limitations are intentionally described as absent rather than implied as complete.
@@ -547,8 +553,8 @@ Realistic next improvements include:
 
 - deployment hardening, monitoring, and custom-domain setup
 - backend aggregate endpoint for dashboard summary and revenue metrics
-- frontend automated tests
 - e2e tests for the main API and UI flows
+- broader frontend component coverage for additional pages and interaction states
 - authentication and authorization if the product scope expands
 - more advanced query caching if the UI grows beyond one active list state per resource
 - seed script for demo data
