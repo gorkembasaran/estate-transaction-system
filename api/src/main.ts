@@ -1,148 +1,34 @@
-import {
-  BadRequestException,
-  INestApplication,
-  Logger,
-  ValidationError,
-  ValidationPipe,
-} from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { createAppUrls } from './config/app-url.util';
+import { configureCors } from './config/cors.config';
+import { configureGlobalPrefix } from './config/global-prefix.config';
+import { configureSwagger } from './config/swagger.config';
+import { configureValidation } from './config/validation.config';
+
+const LOG_CONTEXT = 'Bootstrap';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+  const apiPrefix = configService.get<string>('API_PREFIX');
 
   configureCors(app, configService);
-  configureGlobalPrefix(app, configService);
+  configureGlobalPrefix(app, apiPrefix);
   configureValidation(app);
   configureSwagger(app);
   app.enableShutdownHooks();
 
   const port = configService.getOrThrow<number>('PORT');
   const host = configService.getOrThrow<string>('HOST');
-  const baseUrl = getBaseUrl(host, port, configService);
-  const rootUrl = getRootUrl(host, port);
+  const { apiBaseUrl, rootUrl } = createAppUrls(host, port, apiPrefix);
 
   await app.listen(port, host);
 
-  Logger.log(`API is running at ${baseUrl}`, 'Bootstrap');
-  Logger.log(`Swagger docs are available at ${rootUrl}/docs`, 'Bootstrap');
-}
-
-function configureCors(app: INestApplication, configService: ConfigService) {
-  const frontendOrigin = configService.get<string>('FRONTEND_ORIGIN');
-  const nodeEnv = configService.get<string>('NODE_ENV');
-
-  app.enableCors({
-    origin: createCorsOriginMatcher(frontendOrigin, nodeEnv),
-  });
-}
-
-function createCorsOriginMatcher(frontendOrigin?: string, nodeEnv?: string) {
-  const configuredOrigins = parseCorsOrigins(frontendOrigin);
-
-  if (nodeEnv === 'production') {
-    return configuredOrigins.length > 0 ? configuredOrigins : false;
-  }
-
-  const developmentOrigins = ['http://127.0.0.1:3001', 'http://localhost:3001'];
-
-  return Array.from(new Set([...configuredOrigins, ...developmentOrigins]));
-}
-
-function parseCorsOrigins(frontendOrigin?: string) {
-  if (!frontendOrigin) {
-    return [];
-  }
-
-  return frontendOrigin
-    .split(',')
-    .map((origin) => origin.trim())
-    .map((origin) => origin.replace(/\/+$/g, ''))
-    .filter(Boolean);
-}
-
-function configureGlobalPrefix(
-  app: INestApplication,
-  configService: ConfigService,
-) {
-  const apiPrefix = configService.get<string>('API_PREFIX');
-
-  if (apiPrefix) {
-    app.setGlobalPrefix(apiPrefix);
-  }
-}
-
-function configureValidation(app: INestApplication) {
-  app.useGlobalPipes(
-    new ValidationPipe({
-      exceptionFactory: (errors) =>
-        new BadRequestException({
-          errors: flattenValidationErrors(errors),
-          message: 'Validation failed',
-        }),
-      forbidNonWhitelisted: true,
-      transform: true,
-      whitelist: true,
-    }),
-  );
-}
-
-function configureSwagger(app: INestApplication) {
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Estate Transaction API')
-    .setDescription(
-      'REST API for managing estate agents, transactions, lifecycle transitions, and commission breakdowns.',
-    )
-    .setVersion('1.0')
-    .addTag('Agents')
-    .addTag('Transactions')
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-
-  SwaggerModule.setup('docs', app, document, {
-    customSiteTitle: 'Estate Transaction API Docs',
-    jsonDocumentUrl: 'docs-json',
-  });
-}
-
-function getBaseUrl(host: string, port: number, configService: ConfigService) {
-  const apiPrefix = configService.get<string>('API_PREFIX');
-  const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
-  const rootUrl = `http://${displayHost}:${port}`;
-
-  return apiPrefix ? `${rootUrl}/${apiPrefix}` : rootUrl;
-}
-
-function getRootUrl(host: string, port: number) {
-  const displayHost = host === '0.0.0.0' ? '127.0.0.1' : host;
-
-  return `http://${displayHost}:${port}`;
-}
-
-function flattenValidationErrors(errors: ValidationError[]) {
-  return errors.flatMap((error) => mapValidationError(error));
-}
-
-function mapValidationError(
-  error: ValidationError,
-  parentPath?: string,
-): Array<{ field: string; messages: string[] }> {
-  const fieldPath = parentPath
-    ? `${parentPath}.${error.property}`
-    : error.property;
-  const ownMessages = error.constraints ? Object.values(error.constraints) : [];
-  const childMessages =
-    error.children?.flatMap((child) => mapValidationError(child, fieldPath)) ??
-    [];
-
-  if (ownMessages.length === 0) {
-    return childMessages;
-  }
-
-  return [{ field: fieldPath, messages: ownMessages }, ...childMessages];
+  Logger.log(`API is running at ${apiBaseUrl}`, LOG_CONTEXT);
+  Logger.log(`Swagger docs are available at ${rootUrl}/docs`, LOG_CONTEXT);
 }
 
 bootstrap();
