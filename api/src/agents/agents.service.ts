@@ -85,7 +85,7 @@ export class AgentsService {
     try {
       const agent = await this.agentModel
         .findByIdAndUpdate(id, updateAgentDto, {
-          new: true,
+          returnDocument: 'after',
           runValidators: true,
         })
         .exec();

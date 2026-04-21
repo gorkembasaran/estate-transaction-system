@@ -58,6 +58,10 @@ export default defineNuxtConfig({
     enabled: true,
   },
 
+  experimental: {
+    serverAppConfig: false,
+  },
+
   modules: [
     '@pinia/nuxt',
     '@nuxtjs/tailwindcss',

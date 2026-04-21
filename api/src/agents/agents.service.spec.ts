@@ -264,7 +264,7 @@ describe('AgentsService', () => {
       agentId,
       updateAgentDto,
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       },
     );
