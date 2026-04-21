@@ -2,55 +2,18 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
 import type { TransactionStage } from '../enums/transaction-stage.enum';
+import {
+  FinancialBreakdown,
+  FinancialBreakdownSchema,
+} from './financial-breakdown.schema';
+import {
+  StageHistoryItem,
+  StageHistoryItemSchema,
+} from './stage-history-item.schema';
 
 export type TransactionDocument = HydratedDocument<Transaction>;
-
-@Schema({ _id: false })
-export class FinancialBreakdown {
-  @Prop({ required: true, min: 0 })
-  agencyAmount: number;
-
-  @Prop({ required: true, min: 0 })
-  listingAgentAmount: number;
-
-  @Prop({ required: true, min: 0 })
-  sellingAgentAmount: number;
-
-  @Prop({ required: true, trim: true })
-  listingAgentReason: string;
-
-  @Prop({ required: true, trim: true })
-  sellingAgentReason: string;
-
-  @Prop({ default: Date.now, required: true })
-  calculatedAt: Date;
-}
-
-export const FinancialBreakdownSchema =
-  SchemaFactory.createForClass(FinancialBreakdown);
-
-@Schema({ _id: false })
-export class StageHistoryItem {
-  @Prop({
-    default: null,
-    enum: TRANSACTION_STAGES,
-    type: String,
-  })
-  fromStage: TransactionStage | null;
-
-  @Prop({
-    enum: TRANSACTION_STAGES,
-    required: true,
-    type: String,
-  })
-  toStage: TransactionStage;
-
-  @Prop({ default: Date.now, required: true })
-  changedAt: Date;
-}
-
-export const StageHistoryItemSchema =
-  SchemaFactory.createForClass(StageHistoryItem);
+export { FinancialBreakdown } from './financial-breakdown.schema';
+export { StageHistoryItem } from './stage-history-item.schema';
 
 @Schema({
   collection: 'transactions',

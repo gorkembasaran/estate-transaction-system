@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { FinancialBreakdown } from './schemas/transaction.schema';
+import type { FinancialBreakdown } from '../schemas';
 
 interface CalculateCommissionInput {
   totalServiceFee: number;

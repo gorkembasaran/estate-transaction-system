@@ -1,13 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { AgentsService } from '../agents/agents.service';
+import { AgentsService } from '../../agents/agents.service';
 import { CommissionService } from './commission.service';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
-import type { TransactionStage } from './enums/transaction-stage.enum';
-import {
-  FinancialBreakdown,
-  StageHistoryItem,
-} from './schemas/transaction.schema';
+import { CreateTransactionDto } from '../dto/create-transaction.dto';
+import type { TransactionStage } from '../enums/transaction-stage.enum';
+import { FinancialBreakdown, StageHistoryItem } from '../schemas';
 import { StageTransitionService } from './stage-transition.service';
 import { TransactionsService } from './transactions.service';
 

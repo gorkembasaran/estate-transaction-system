@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AgentsModule } from '../agents/agents.module';
-import { CommissionService } from './commission.service';
-import { StageTransitionService } from './stage-transition.service';
-import { Transaction, TransactionSchema } from './schemas/transaction.schema';
-import { TransactionsController } from './transactions.controller';
-import { TransactionsService } from './transactions.service';
+import { TransactionsController } from './controllers';
+import { Transaction, TransactionSchema } from './schemas';
+import {
+  CommissionService,
+  StageTransitionService,
+  TransactionsService,
+} from './services';
 
 @Module({
   imports: [

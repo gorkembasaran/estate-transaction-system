@@ -19,21 +19,21 @@ import {
   ApiTags,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import {
   GetTransactionsQueryDto,
   SORT_ORDERS,
   TRANSACTION_SORT_FIELDS,
-} from './dto/get-transactions-query.dto';
+} from '../dto/get-transactions-query.dto';
 import {
   FinancialBreakdownResponseDto,
   PaginatedTransactionsResponseDto,
   TRANSACTION_RESPONSE_EXTRA_MODELS,
   TransactionResponseDto,
-} from './dto/transaction-response.dto';
-import { UpdateTransactionStageDto } from './dto/update-transaction-stage.dto';
-import { TRANSACTION_STAGES } from './enums/transaction-stage.enum';
-import { TransactionsService } from './transactions.service';
+} from '../dto/transaction-response.dto';
+import { UpdateTransactionStageDto } from '../dto/update-transaction-stage.dto';
+import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
+import { TransactionsService } from '../services';
 
 @ApiTags('Transactions')
 @ApiExtraModels(...TRANSACTION_RESPONSE_EXTRA_MODELS)

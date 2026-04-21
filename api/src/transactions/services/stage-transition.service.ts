@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { TransactionStage } from './enums/transaction-stage.enum';
-import { StageHistoryItem } from './schemas/transaction.schema';
+import type { TransactionStage } from '../enums/transaction-stage.enum';
+import type { StageHistoryItem } from '../schemas';
 
 const ALLOWED_TRANSITIONS: Record<TransactionStage, TransactionStage[]> = {
   agreement: ['earnest_money'],
