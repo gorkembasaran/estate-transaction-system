@@ -151,7 +151,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="transaction-detail-page" aria-labelledby="transaction-title">
+  <section
+    class="transaction-detail-page"
+    aria-labelledby="transaction-title"
+    data-testid="transaction-detail-page"
+  >
     <NuxtLink class="back-link" to="/transactions">
       <span aria-hidden="true">←</span>
       Back to Transactions
@@ -207,7 +211,7 @@ onMounted(() => {
             {{ transaction.propertyTitle }}
           </h1>
 
-          <div class="current-stage">
+          <div class="current-stage" data-testid="transaction-current-stage">
             <span>Current Stage:</span>
             <StageBadge :stage="transaction.stage" />
           </div>
@@ -219,6 +223,7 @@ onMounted(() => {
             <select
               id="next-stage"
               v-model="selectedNextStage"
+              data-testid="transaction-stage-select"
               :disabled="nextStageOptions.length === 0 || isLoading"
             >
               <option value="">
@@ -239,6 +244,7 @@ onMounted(() => {
 
             <button
               type="button"
+              data-testid="transaction-stage-submit"
               :disabled="!canUpdateStage"
               @click="updateStage"
             >
@@ -348,7 +354,10 @@ onMounted(() => {
         </section>
       </div>
 
-      <section class="detail-card breakdown-section">
+      <section
+        class="detail-card breakdown-section"
+        data-testid="transaction-breakdown-section"
+      >
         <h2>Financial Breakdown</h2>
 
         <div v-if="breakdown" class="breakdown-grid">

@@ -187,7 +187,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="create-agent-page" aria-labelledby="create-agent-title">
+  <section
+    class="create-agent-page"
+    aria-labelledby="create-agent-title"
+    data-testid="create-agent-page"
+  >
     <NuxtLink class="back-link" to="/agents">
       <span aria-hidden="true">←</span>
       Back to Agents
@@ -214,6 +218,7 @@ onMounted(() => {
           :aria-describedby="fieldErrors.fullName ? 'fullName-error' : undefined"
           :aria-invalid="Boolean(fieldErrors.fullName)"
           autocomplete="name"
+          data-testid="agent-full-name-input"
           name="fullName"
           placeholder="Enter agent's full name"
           type="text"
@@ -232,6 +237,7 @@ onMounted(() => {
           :aria-describedby="fieldErrors.email ? 'email-error' : undefined"
           :aria-invalid="Boolean(fieldErrors.email)"
           autocomplete="email"
+          data-testid="agent-email-input"
           inputmode="email"
           name="email"
           placeholder="agent@example.com"
@@ -247,6 +253,7 @@ onMounted(() => {
         <input
           id="isActive"
           v-model="form.isActive"
+          data-testid="agent-is-active-input"
           name="isActive"
           type="checkbox"
           @change="clearFieldError('isActive')"
@@ -269,7 +276,12 @@ onMounted(() => {
       </small>
 
       <div class="form-actions">
-        <button class="primary-button" :disabled="!canSubmit" type="submit">
+        <button
+          class="primary-button"
+          data-testid="create-agent-submit"
+          :disabled="!canSubmit"
+          type="submit"
+        >
           {{ isSubmitting ? 'Creating...' : 'Create Agent' }}
         </button>
 

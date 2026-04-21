@@ -229,7 +229,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="edit-agent-page" aria-labelledby="edit-agent-title">
+  <section
+    class="edit-agent-page"
+    aria-labelledby="edit-agent-title"
+    data-testid="edit-agent-page"
+  >
     <NuxtLink class="back-link" to="/agents">
       <span aria-hidden="true">←</span>
       Back to Agents
@@ -276,6 +280,7 @@ onMounted(async () => {
             :aria-describedby="fieldErrors.fullName ? 'fullName-error' : undefined"
             :aria-invalid="Boolean(fieldErrors.fullName)"
             autocomplete="name"
+            data-testid="agent-full-name-input"
             name="fullName"
             placeholder="Enter agent's full name"
             type="text"
@@ -298,6 +303,7 @@ onMounted(async () => {
             :aria-describedby="fieldErrors.email ? 'email-error' : undefined"
             :aria-invalid="Boolean(fieldErrors.email)"
             autocomplete="email"
+            data-testid="agent-email-input"
             inputmode="email"
             name="email"
             placeholder="agent@example.com"
@@ -313,6 +319,7 @@ onMounted(async () => {
           <input
             id="isActive"
             v-model="form.isActive"
+            data-testid="agent-is-active-input"
             name="isActive"
             type="checkbox"
             @change="clearFieldError('isActive')"
@@ -336,7 +343,12 @@ onMounted(async () => {
         </small>
 
         <div class="form-actions">
-          <button class="primary-button" :disabled="!canSubmit" type="submit">
+          <button
+            class="primary-button"
+            data-testid="edit-agent-submit"
+            :disabled="!canSubmit"
+            type="submit"
+          >
             {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
           </button>
 

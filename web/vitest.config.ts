@@ -13,10 +13,18 @@ export default defineConfig({
     },
   },
   test: {
+    exclude: [
+      '.nuxt/**',
+      '.output/**',
+      'dist/**',
+      'e2e/**',
+      'node_modules/**',
+    ],
     coverage: {
       exclude: [
         '.nuxt/**',
         '.output/**',
+        'e2e/**',
         'node_modules/**',
         'test/**',
         'vitest.config.ts',

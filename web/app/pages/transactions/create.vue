@@ -128,7 +128,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="create-transaction-page" aria-labelledby="create-title">
+  <section
+    class="create-transaction-page"
+    aria-labelledby="create-title"
+    data-testid="create-transaction-page"
+  >
     <NuxtLink class="back-link" to="/transactions">
       <span aria-hidden="true">←</span>
       Back to Transactions
@@ -164,6 +168,7 @@ onMounted(() => {
           <input
             v-model="form.propertyTitle"
             autocomplete="off"
+            data-testid="transaction-property-title-input"
             name="propertyTitle"
             placeholder="Enter property title"
             type="text"
@@ -196,6 +201,7 @@ onMounted(() => {
           <span>Service Fee *</span>
           <input
             v-model="serviceFeeInput"
+            data-testid="transaction-service-fee-input"
             min="0.01"
             name="totalServiceFee"
             placeholder="Enter service fee"
@@ -209,6 +215,7 @@ onMounted(() => {
           <span class="select-control">
             <select
               v-model="form.currency"
+              data-testid="transaction-currency-select"
               name="currency"
               aria-label="Select currency"
             >
@@ -233,6 +240,7 @@ onMounted(() => {
         <div class="form-actions">
           <button
             class="primary-button"
+            data-testid="create-transaction-submit"
             :disabled="isSubmitting || !hasAgents"
             type="submit"
           >

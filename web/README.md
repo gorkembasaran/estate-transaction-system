@@ -21,12 +21,13 @@ Implemented:
 - loading, error, and empty states on the main data pages
 - query-aware list refresh after create/update mutations
 - frontend unit/component tests with Vitest for shared utilities, reusable components, and Pinia stores
+- browser-level E2E tests with Playwright for smoke checks, agent create/edit flow, and transaction lifecycle flow
+- deployed-environment smoke test mode for the public frontend/backend URLs
 
 Not currently implemented:
 
 - authentication or authorization UI
 - dedicated dashboard aggregate API integration for global revenue totals
-- browser-level e2e test coverage
 
 ## Tech Stack
 
@@ -314,7 +315,7 @@ An inline head script initializes the theme before page paint using local storag
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
 - Authentication and authorization UI are not implemented.
 - The frontend depends on the backend API being available for data-backed pages.
-- Browser-level e2e coverage is not implemented yet.
+- Local E2E tests create real test records through the running backend; deployed E2E mode intentionally runs read-only smoke tests.
 
 ## Available Scripts
 
@@ -358,6 +359,27 @@ Run Vitest in watch mode:
 
 ```bash
 npm run test:watch
+```
+
+Run local browser-level E2E tests:
+
+```bash
+npm run test:e2e
+```
+
+By default, the local E2E command starts its own backend and frontend preview servers and points the backend to `mongodb://127.0.0.1:27017/estate_transaction_system_e2e`. Set `E2E_MONGODB_URI` or `E2E_MONGODB_DATABASE` to override the test database, and set `E2E_REUSE_SERVER=true` only when intentionally reusing already running local servers.
+
+Run deployed frontend/backend smoke E2E tests:
+
+```bash
+npm run test:e2e:prod
+```
+
+Run E2E tests headed or with the Playwright UI:
+
+```bash
+npm run test:e2e:headed
+npm run test:e2e:ui
 ```
 
 Nuxt preparation after install:

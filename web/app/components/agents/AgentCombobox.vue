@@ -184,7 +184,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="rootElement" class="agent-combobox">
+  <div
+    ref="rootElement"
+    class="agent-combobox"
+    :data-testid="`${name}-combobox`"
+  >
     <label class="agent-combobox-label" :for="name">
       {{ label }} *
     </label>
@@ -195,6 +199,7 @@ onBeforeUnmount(() => {
         'is-disabled': disabled,
         'is-open': isOpen,
       }"
+      :data-testid="`${name}-combobox-control`"
       @click.stop="openList"
     >
       <div class="agent-combobox-copy">
@@ -229,6 +234,7 @@ onBeforeUnmount(() => {
           ref="searchInput"
           v-model="searchQuery"
           autocomplete="off"
+          :data-testid="`${name}-combobox-search`"
           :disabled="disabled"
           :name="`${name}Search`"
           placeholder="Search active agents by name or email..."
@@ -246,6 +252,7 @@ onBeforeUnmount(() => {
           v-for="agent in visibleAgents"
           :key="agent._id"
           class="agent-option"
+          :data-testid="`${name}-combobox-option`"
           type="button"
           @click="selectAgent(agent)"
         >

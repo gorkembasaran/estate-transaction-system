@@ -61,10 +61,9 @@ The core problem is more than CRUD. The important design concern is keeping life
 - CI/CD configuration
 - seed scripts
 - dedicated backend dashboard aggregate endpoint
-- browser-level frontend e2e tests
-- implemented e2e test specs
+- backend-specific e2e specs
 
-The backend package includes an e2e test script and Jest e2e configuration, but no e2e spec file is currently implemented.
+The backend package includes an e2e test script and Jest e2e configuration, but no backend e2e spec file is currently implemented.
 
 ## High-Level Architecture
 
@@ -529,7 +528,9 @@ Frontend unit/component tests are implemented with Vitest around the current hig
 - reusable UI components such as `StageBadge`, `DashboardStatCard`, and `AgentCombobox`
 - Pinia store behavior for paginated fetches, async agent search, and query-aware mutation refresh
 
-The backend package still contains an e2e test script/configuration without implemented e2e specs, and browser-level frontend e2e coverage is not yet present.
+Frontend browser-level E2E tests are implemented with Playwright. The local E2E suite covers application smoke checks, agent create/edit flow, and transaction create-to-completion lifecycle flow. A deployed-mode E2E command runs read-only smoke checks against the public Vercel frontend and Render backend without mutating production data.
+
+The backend package still contains an e2e test script/configuration without implemented backend-specific e2e specs.
 
 ## Trade-Offs and Current Limitations
 
@@ -541,8 +542,7 @@ Current trade-offs and limitations:
 - There is no dedicated backend dashboard aggregate endpoint.
 - Dashboard revenue is based on loaded completed results rather than a backend aggregate.
 - Stores keep one active list state per resource rather than a normalized multi-query cache.
-- Implemented e2e test specs are not present.
-- Browser-level frontend e2e tests are not present.
+- Backend-specific e2e specs are not present.
 - Seed scripts are not implemented.
 
 These limitations are intentionally described as absent rather than implied as complete.
@@ -553,7 +553,8 @@ Realistic next improvements include:
 
 - deployment hardening, monitoring, and custom-domain setup
 - backend aggregate endpoint for dashboard summary and revenue metrics
-- e2e tests for the main API and UI flows
+- backend-specific e2e tests for API flows
+- broader browser E2E coverage for additional edge cases and visual states
 - broader frontend component coverage for additional pages and interaction states
 - authentication and authorization if the product scope expands
 - more advanced query caching if the UI grows beyond one active list state per resource

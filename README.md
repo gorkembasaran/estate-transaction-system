@@ -300,6 +300,8 @@ src/transactions/**/*.service.ts
 
 Frontend unit/component tests are implemented under `web/` with Vitest and cover shared formatting utilities, store error handling, reusable UI components, async agent combobox behavior, and query-aware store mutation flows.
 
+Frontend browser-level E2E tests are implemented under `web/e2e` with Playwright. The local suite covers smoke checks, agent create/edit flow, and transaction lifecycle completion. A deployed smoke mode is also available for the public frontend and backend URLs.
+
 ## Documentation Map
 
 - `README.md` -> repository overview and current implementation status
