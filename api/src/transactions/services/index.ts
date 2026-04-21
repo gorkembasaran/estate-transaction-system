@@ -1,3 +1,3 @@
-export { CommissionService } from './commission.service';
-export { StageTransitionService } from './stage-transition.service';
-export { TransactionsService } from './transactions.service';
+export { CommissionService } from './commission';
+export { StageTransitionService } from './lifecycle';
+export { TransactionsService } from './transactions';

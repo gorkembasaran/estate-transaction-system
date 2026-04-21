@@ -5,21 +5,21 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { AgentsService } from '../../agents/services';
+import { AgentsService } from '../../../agents/services';
 import {
   TRANSACTION_AGENT_POPULATE_FIELDS,
   TRANSACTION_LISTING_AGENT_PATH,
   TRANSACTION_SELLING_AGENT_PATH,
-} from '../constants';
-import { CreateTransactionDto } from '../dto/create-transaction.dto';
-import { GetTransactionsQueryDto } from '../dto/get-transactions-query.dto';
-import { UpdateTransactionStageDto } from '../dto/update-transaction-stage.dto';
-import type { TransactionStage } from '../enums/transaction-stage.enum';
-import { buildTransactionListQuery } from '../query';
-import { Transaction } from '../schemas';
-import type { TransactionDocument } from '../schemas';
-import { CommissionService } from './commission.service';
-import { StageTransitionService } from './stage-transition.service';
+} from '../../constants';
+import { CreateTransactionDto } from '../../dto/create-transaction.dto';
+import { GetTransactionsQueryDto } from '../../dto/get-transactions-query.dto';
+import { UpdateTransactionStageDto } from '../../dto/update-transaction-stage.dto';
+import type { TransactionStage } from '../../enums/transaction-stage.enum';
+import { buildTransactionListQuery } from '../../query';
+import { Transaction } from '../../schemas';
+import type { TransactionDocument } from '../../schemas';
+import { CommissionService } from '../commission';
+import { StageTransitionService } from '../lifecycle';
 
 @Injectable()
 export class TransactionsService {

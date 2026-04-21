@@ -1,11 +1,11 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { AgentsService } from '../../agents/services';
-import { CommissionService } from './commission.service';
-import { CreateTransactionDto } from '../dto/create-transaction.dto';
-import type { TransactionStage } from '../enums/transaction-stage.enum';
-import { FinancialBreakdown, StageHistoryItem } from '../schemas';
-import { StageTransitionService } from './stage-transition.service';
+import { AgentsService } from '../../../agents/services';
+import { CreateTransactionDto } from '../../dto/create-transaction.dto';
+import type { TransactionStage } from '../../enums/transaction-stage.enum';
+import { FinancialBreakdown, StageHistoryItem } from '../../schemas';
+import { CommissionService } from '../commission';
+import { StageTransitionService } from '../lifecycle';
 import { TransactionsService } from './transactions.service';
 
 type TransactionModelMock = {
