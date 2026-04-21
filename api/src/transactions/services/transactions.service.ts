@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { AgentsService } from '../../agents/agents.service';
+import { AgentsService } from '../../agents/services';
 import {
   TRANSACTION_AGENT_POPULATE_FIELDS,
   TRANSACTION_LISTING_AGENT_PATH,

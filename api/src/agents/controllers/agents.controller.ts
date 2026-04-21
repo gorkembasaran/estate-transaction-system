@@ -18,15 +18,15 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { AgentsService } from './agents.service';
+import { AgentsService } from '../services';
 import {
   AgentResponseDto,
   PaginatedAgentsResponseDto,
-} from './dto/agent-response.dto';
-import { CreateAgentDto } from './dto/create-agent.dto';
-import { AGENT_STATUS_FILTERS } from './dto/get-agents-query.dto';
-import { GetAgentsQueryDto } from './dto/get-agents-query.dto';
-import { UpdateAgentDto } from './dto/update-agent.dto';
+} from '../dto/agent-response.dto';
+import { CreateAgentDto } from '../dto/create-agent.dto';
+import { AGENT_STATUS_FILTERS } from '../dto/get-agents-query.dto';
+import { GetAgentsQueryDto } from '../dto/get-agents-query.dto';
+import { UpdateAgentDto } from '../dto/update-agent.dto';
 
 @ApiTags('Agents')
 @Controller('agents')

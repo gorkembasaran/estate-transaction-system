@@ -1,6 +1,6 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { AgentsService } from '../../agents/agents.service';
+import { AgentsService } from '../../agents/services';
 import { CommissionService } from './commission.service';
 import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import type { TransactionStage } from '../enums/transaction-stage.enum';

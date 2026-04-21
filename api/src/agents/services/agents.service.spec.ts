@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { Types } from 'mongoose';
 import { AgentsService } from './agents.service';
-import { CreateAgentDto } from './dto/create-agent.dto';
-import { UpdateAgentDto } from './dto/update-agent.dto';
+import { CreateAgentDto } from '../dto/create-agent.dto';
+import { UpdateAgentDto } from '../dto/update-agent.dto';
 
 type AgentModelMock = {
   countDocuments: jest.Mock;
@@ -116,17 +116,19 @@ describe('AgentsService', () => {
     agentModel.find.mockReturnValue(query);
     agentModel.countDocuments.mockReturnValue(countQuery);
 
-    await expect(service.getAllAgents({ page: 1, limit: 10 })).resolves.toEqual({
-      items: [],
-      meta: {
-        hasNextPage: false,
-        hasPreviousPage: false,
-        limit: 10,
-        page: 1,
-        totalItems: 0,
-        totalPages: 0,
+    await expect(service.getAllAgents({ page: 1, limit: 10 })).resolves.toEqual(
+      {
+        items: [],
+        meta: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          limit: 10,
+          page: 1,
+          totalItems: 0,
+          totalPages: 0,
+        },
       },
-    });
+    );
 
     expect(agentModel.find).toHaveBeenCalledWith({});
     expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
@@ -151,10 +153,7 @@ describe('AgentsService', () => {
     await service.getAllAgents({ page: 2, limit: 5, search: 'gorkem' });
 
     expect(agentModel.find).toHaveBeenCalledWith({
-      $or: [
-        { fullName: expect.any(RegExp) },
-        { email: expect.any(RegExp) },
-      ],
+      $or: [{ fullName: expect.any(RegExp) }, { email: expect.any(RegExp) }],
     });
     expect(query.skip).toHaveBeenCalledWith(5);
     expect(query.limit).toHaveBeenCalledWith(5);

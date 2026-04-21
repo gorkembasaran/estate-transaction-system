@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 export type AgentDocument = HydratedDocument<Agent>;
 
@@ -8,6 +8,8 @@ export type AgentDocument = HydratedDocument<Agent>;
   timestamps: true,
 })
 export class Agent {
+  _id: Types.ObjectId;
+
   @Prop({
     minlength: 2,
     required: true,
@@ -27,6 +29,10 @@ export class Agent {
     required: true,
   })
   isActive: boolean;
+
+  createdAt: Date;
+
+  updatedAt: Date;
 }
 
 export const AgentSchema = SchemaFactory.createForClass(Agent);

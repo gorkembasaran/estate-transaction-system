@@ -6,15 +6,13 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { CreateAgentDto } from './dto/create-agent.dto';
-import { GetAgentsQueryDto } from './dto/get-agents-query.dto';
-import { UpdateAgentDto } from './dto/update-agent.dto';
-import { Agent, AgentDocument } from './schemas/agent.schema';
-
-type AgentListFilter = {
-  $or?: Array<{ email: RegExp } | { fullName: RegExp }>;
-  isActive?: boolean;
-};
+import { CreateAgentDto } from '../dto/create-agent.dto';
+import { GetAgentsQueryDto } from '../dto/get-agents-query.dto';
+import { UpdateAgentDto } from '../dto/update-agent.dto';
+import { buildAgentListQuery } from '../query';
+import { Agent } from '../schemas';
+import type { AgentDocument } from '../schemas';
+import { isMongoDuplicateKeyError } from '../utils';
 
 @Injectable()
 export class AgentsService {
@@ -27,7 +25,7 @@ export class AgentsService {
     try {
       return await this.agentModel.create(createAgentDto);
     } catch (error) {
-      if (this.isDuplicateEmailError(error)) {
+      if (isMongoDuplicateKeyError(error)) {
         throw new ConflictException(
           `Agent with email "${createAgentDto.email}" already exists`,
         );
@@ -38,18 +36,10 @@ export class AgentsService {
   }
 
   async getAllAgents(query: GetAgentsQueryDto) {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
-    const skip = (page - 1) * limit;
-    const filter = this.buildAgentFilter(query);
+    const { filter, limit, page, skip, sort } = buildAgentListQuery(query);
 
     const [items, totalItems] = await Promise.all([
-      this.agentModel
-        .find(filter)
-        .sort({ createdAt: -1, _id: -1 })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
+      this.agentModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
       this.agentModel.countDocuments(filter).exec(),
     ]);
     const totalPages = Math.ceil(totalItems / limit);
@@ -96,7 +86,7 @@ export class AgentsService {
 
       return agent;
     } catch (error) {
-      if (this.isDuplicateEmailError(error) && updateAgentDto.email) {
+      if (isMongoDuplicateKeyError(error) && updateAgentDto.email) {
         throw new ConflictException(
           `Agent with email "${updateAgentDto.email}" already exists`,
         );
@@ -110,45 +100,9 @@ export class AgentsService {
     await this.getAgentById(id);
   }
 
-  private buildAgentFilter(query: GetAgentsQueryDto): AgentListFilter {
-    const filter: AgentListFilter = {};
-
-    if (query.status === 'active') {
-      filter.isActive = true;
-    }
-
-    if (query.status === 'inactive') {
-      filter.isActive = false;
-    }
-
-    if (query.search) {
-      const searchPattern = new RegExp(escapeRegex(query.search), 'i');
-
-      filter.$or = [
-        { fullName: searchPattern },
-        { email: searchPattern },
-      ];
-    }
-
-    return filter;
-  }
-
   private assertValidObjectId(id: string) {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException(`Invalid agent id: "${id}"`);
     }
   }
-
-  private isDuplicateEmailError(error: unknown) {
-    return (
-      typeof error === 'object' &&
-      error !== null &&
-      'code' in error &&
-      error.code === 11000
-    );
-  }
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
