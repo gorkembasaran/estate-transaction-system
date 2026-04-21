@@ -31,7 +31,7 @@ Not currently implemented:
 
 ## Tech Stack
 
-- Nuxt, current package version `^4.4.2`
+- Nuxt 3, current package version `^3.21.2`
 - Vue 3 / Composition API
 - TypeScript
 - Pinia

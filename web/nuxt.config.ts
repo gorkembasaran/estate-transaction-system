@@ -21,6 +21,8 @@ const themeInitScript = `
 `
 
 export default defineNuxtConfig({
+  srcDir: 'app',
+
   app: {
     head: {
       title: 'Estate Manager',
@@ -56,10 +58,6 @@ export default defineNuxtConfig({
 
   devtools: {
     enabled: true,
-  },
-
-  experimental: {
-    serverAppConfig: false,
   },
 
   modules: [
