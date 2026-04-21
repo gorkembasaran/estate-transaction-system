@@ -2,11 +2,13 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { createAppUrls } from './config/app-url.util';
-import { configureCors } from './config/cors.config';
-import { configureGlobalPrefix } from './config/global-prefix.config';
-import { configureSwagger } from './config/swagger.config';
-import { configureValidation } from './config/validation.config';
+import {
+  configureCors,
+  configureGlobalPrefix,
+  configureSwagger,
+  configureValidation,
+  createAppUrls,
+} from './config/bootstrap';
 
 const LOG_CONTEXT = 'Bootstrap';
 

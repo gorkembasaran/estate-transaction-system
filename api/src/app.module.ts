@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AgentsModule } from './agents/agents.module';
-import { validateEnvironment } from './config/env.validation';
+import { validateEnvironment } from './config/env';
 import { DatabaseModule } from './database/database.module';
 import { TransactionsModule } from './transactions/transactions.module';
 
