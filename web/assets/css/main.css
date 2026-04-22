@@ -449,6 +449,7 @@ html[data-theme='dark'] .stage-select,
 html[data-theme='dark'] .status-select,
 html[data-theme='dark'] .form-field select {
   color-scheme: dark;
+  -webkit-text-fill-color: #f8fafc;
 }
 
 html[data-theme='dark'] .status-select {

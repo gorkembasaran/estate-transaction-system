@@ -2,6 +2,8 @@ import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTransactionsStore } from '~/stores/transactions'
 import type {
+  GetTransactionsParams,
+  Transaction,
   TransactionSortBy,
   TransactionSortOrder,
   TransactionStage,
@@ -37,6 +39,7 @@ export function useTransactionsListPage() {
     error,
     isLoading,
     items: transactions,
+    lastFetchParams,
     pagination,
   } = storeToRefs(transactionsStore)
 
@@ -49,7 +52,6 @@ export function useTransactionsListPage() {
   const currentPage = ref(1)
   const sortBy = ref<TransactionSortBy>('updatedAt')
   const sortOrder = ref<TransactionSortOrder>('desc')
-  const hasCompletedInitialLoad = ref(false)
 
   let searchDebounce: ReturnType<typeof setTimeout> | null = null
 
@@ -63,23 +65,46 @@ export function useTransactionsListPage() {
       dateFrom.value.length > 0 ||
       dateTo.value.length > 0,
   )
+  const currentFetchParams = computed(() => ({
+    dateFrom: dateFrom.value || undefined,
+    dateTo: dateTo.value || undefined,
+    limit: PAGE_SIZE,
+    page: currentPage.value,
+    search: normalizedSearchQuery.value || undefined,
+    sortBy: sortBy.value,
+    sortOrder: sortOrder.value,
+    stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
+  }))
+  const isCurrentQueryLoaded = computed(() =>
+    doFetchParamsMatch(lastFetchParams.value, currentFetchParams.value),
+  )
+  const displayedTransactions = computed<Transaction[]>(() =>
+    isCurrentQueryLoaded.value ? transactions.value : [],
+  )
   const resultSummary = computed(() => {
+    if (!isCurrentQueryLoaded.value && error.value) {
+      return 'Could not load transactions'
+    }
+
+    if (!isCurrentQueryLoaded.value) {
+      return 'Loading transactions...'
+    }
+
     if (pagination.value.totalItems === 0) {
       return 'Showing 0 of 0 transactions'
     }
 
     const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
-    const endItem = startItem + transactions.value.length - 1
+    const endItem = startItem + displayedTransactions.value.length - 1
 
     return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
   })
   const showSkeletonRows = computed(
-    () =>
-      !hasCompletedInitialLoad.value &&
-      transactions.value.length === 0 &&
-      !error.value,
+    () => !isCurrentQueryLoaded.value && !error.value,
   )
-  const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
+  const hasMultiplePages = computed(
+    () => isCurrentQueryLoaded.value && pagination.value.totalPages > 1,
+  )
   const emptyStateTitle = computed(() =>
     hasActiveFilters.value
       ? 'No transactions match your current filters'
@@ -92,24 +117,12 @@ export function useTransactionsListPage() {
   )
 
   async function loadTransactions(forceRefresh = false): Promise<void> {
-    try {
-      await transactionsStore
-        .fetchTransactions({
-          forceRefresh,
-          dateFrom: dateFrom.value || undefined,
-          dateTo: dateTo.value || undefined,
-          limit: PAGE_SIZE,
-          page: currentPage.value,
-          search: normalizedSearchQuery.value || undefined,
-          sortBy: sortBy.value,
-          sortOrder: sortOrder.value,
-          stage:
-            selectedStage.value === 'all' ? undefined : selectedStage.value,
-        })
-        .catch(() => undefined)
-    } finally {
-      hasCompletedInitialLoad.value = true
-    }
+    await transactionsStore
+      .fetchTransactions({
+        ...currentFetchParams.value,
+        forceRefresh,
+      })
+      .catch(() => undefined)
   }
 
   async function retryTransactions(): Promise<void> {
@@ -297,6 +310,35 @@ export function useTransactionsListPage() {
     showSkeletonRows,
     stageOptions,
     toggleSort,
-    transactions,
+    transactions: displayedTransactions,
   }
+}
+
+function doFetchParamsMatch(
+  loadedParams: GetTransactionsParams | null,
+  expectedParams: {
+    dateFrom?: string
+    dateTo?: string
+    limit: number
+    page: number
+    search?: string
+    sortBy: TransactionSortBy
+    sortOrder: TransactionSortOrder
+    stage?: TransactionStage
+  },
+): boolean {
+  if (!loadedParams) {
+    return false
+  }
+
+  return (
+    (loadedParams.dateFrom || undefined) === expectedParams.dateFrom &&
+    (loadedParams.dateTo || undefined) === expectedParams.dateTo &&
+    loadedParams.limit === expectedParams.limit &&
+    loadedParams.page === expectedParams.page &&
+    (loadedParams.search || undefined) === expectedParams.search &&
+    loadedParams.sortBy === expectedParams.sortBy &&
+    loadedParams.sortOrder === expectedParams.sortOrder &&
+    loadedParams.stage === expectedParams.stage
+  )
 }

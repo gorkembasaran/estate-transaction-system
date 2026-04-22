@@ -12,6 +12,7 @@ const {
   recentTransactions,
   retryDashboard,
   revenueSummary,
+  showCountSkeletons,
   showSkeletons,
   successRate,
   totalTransactions,
@@ -47,7 +48,7 @@ const {
 
       <DashboardStatCard
         icon="check"
-        :is-loading="showSkeletons"
+        :is-loading="showSkeletons || showCountSkeletons"
         label="Completed Transactions"
         supporting-label="Closed transactions"
         tone="success"
@@ -56,7 +57,7 @@ const {
 
       <DashboardStatCard
         icon="clock"
-        :is-loading="showSkeletons"
+        :is-loading="showSkeletons || showCountSkeletons"
         label="Active Transactions"
         supporting-label="Not yet completed"
         tone="warning"
@@ -103,7 +104,7 @@ const {
 
       <DashboardStatCard
         icon="trend"
-        :is-loading="showSkeletons"
+        :is-loading="showSkeletons || showCountSkeletons"
         label="Success Rate"
         :supporting-label="completedTransactionsSupportingLabel"
         tone="success"

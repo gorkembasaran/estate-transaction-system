@@ -55,6 +55,9 @@ export function useDashboardPage() {
       isDashboardLoading.value &&
       !errorMessage.value,
   )
+  const showCountSkeletons = computed(
+    () => completedTransactionsCount.value === null && !errorMessage.value,
+  )
 
   async function loadDashboard(forceRefresh = false): Promise<void> {
     isDashboardLoading.value = true
@@ -102,6 +105,7 @@ export function useDashboardPage() {
     recentTransactions,
     retryDashboard,
     revenueSummary,
+    showCountSkeletons,
     showSkeletons,
     successRate,
     totalTransactions,

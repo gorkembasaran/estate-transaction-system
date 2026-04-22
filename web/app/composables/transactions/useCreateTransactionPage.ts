@@ -13,14 +13,11 @@ export function useCreateTransactionPage() {
   const agentsStore = useAgentsStore()
   const transactionsStore = useTransactionsStore()
 
-  const {
-    error: agentsError,
-    isLoading: agentsLoading,
-    items: agents,
-  } = storeToRefs(agentsStore)
+  const { error: agentsError } = storeToRefs(agentsStore)
   const { error: transactionError, isLoading: transactionLoading } =
     storeToRefs(transactionsStore)
 
+  const agents = ref<Agent[]>([])
   const form = reactive<CreateTransactionPayload>({
     currency: 'USD',
     listingAgentId: '',
@@ -30,6 +27,7 @@ export function useCreateTransactionPage() {
   })
   const serviceFeeInput = ref('')
   const localError = ref<string | null>(null)
+  const agentsLoading = ref(false)
   const hasCompletedInitialLoad = ref(false)
 
   const isSubmitting = computed(() => transactionLoading.value)
@@ -44,17 +42,21 @@ export function useCreateTransactionPage() {
   )
   const hasAgents = computed(() => agents.value.length > 0)
 
-  async function loadAgents(forceRefresh = false): Promise<void> {
+  async function loadAgents(): Promise<void> {
+    agentsLoading.value = true
+    localError.value = null
+
     try {
-      await agentsStore
-        .fetchAgents({
-          forceRefresh,
-          limit: 10,
-          page: 1,
-          status: 'active',
-        })
-        .catch(() => undefined)
+      agents.value = await agentsStore.searchAgents({
+        limit: 10,
+        page: 1,
+        status: 'active',
+      })
+    } catch {
+      agents.value = []
+      localError.value = 'Could not load active agents.'
     } finally {
+      agentsLoading.value = false
       hasCompletedInitialLoad.value = true
     }
   }
