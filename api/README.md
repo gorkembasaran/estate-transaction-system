@@ -36,7 +36,7 @@ The backend manages agents, transactions, lifecycle stage transitions, and commi
 Default local base URL:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3001
 ```
 
 Routes are unprefixed by default.
@@ -44,7 +44,7 @@ Routes are unprefixed by default.
 If `API_PREFIX=api` is configured, the API base becomes:
 
 ```text
-http://127.0.0.1:3000/api
+http://127.0.0.1:3001/api
 ```
 
 Production API base URL:
@@ -58,13 +58,13 @@ https://estate-transaction-api.onrender.com
 Swagger UI is available at:
 
 ```text
-http://127.0.0.1:3000/docs
+http://127.0.0.1:3001/docs
 ```
 
 The generated OpenAPI JSON document is available at:
 
 ```text
-http://127.0.0.1:3000/docs-json
+http://127.0.0.1:3001/docs-json
 ```
 
 Production Swagger UI:
@@ -467,7 +467,7 @@ Use `.env.example` as the starting point.
 | --- | --- | --- | --- |
 | `NODE_ENV` | no | `development` | Must be `development`, `test`, or `production` |
 | `HOST` | no | `0.0.0.0` | Host used by `app.listen` |
-| `PORT` | no | `3000` | Must be a valid TCP port |
+| `PORT` | no | `3001` | Must be a valid TCP port |
 | `FRONTEND_ORIGIN` | no | none | Comma-separated CORS origins; trailing slashes are normalized |
 | `API_PREFIX` | no | none | Optional global route prefix; leading/trailing slashes are trimmed |
 | `MONGODB_URI` | production only | `mongodb://127.0.0.1:27017` | Required when `NODE_ENV=production` |
@@ -476,8 +476,8 @@ Use `.env.example` as the starting point.
 Development CORS defaults include:
 
 ```text
-http://127.0.0.1:3001
-http://localhost:3001
+http://127.0.0.1:3000
+http://localhost:3000
 ```
 
 In production, CORS is disabled unless `FRONTEND_ORIGIN` is configured.
@@ -567,6 +567,8 @@ Coverage can also be run with:
 npm run test -- --coverage
 ```
 
+Jest generates coverage through Istanbul-based coverage reporting and writes the report to `api/coverage/`.
+
 Debug tests:
 
 ```bash
@@ -587,10 +589,10 @@ Unit tests are focused on the service layer because that is where the core busin
 
 Current service test files:
 
-- `src/agents/agents.service.spec.ts`
-- `src/transactions/transactions.service.spec.ts`
-- `src/transactions/commission.service.spec.ts`
-- `src/transactions/stage-transition.service.spec.ts`
+- `src/agents/services/agents.service.spec.ts`
+- `src/transactions/services/transactions/transactions.service.spec.ts`
+- `src/transactions/services/commission/commission.service.spec.ts`
+- `src/transactions/services/lifecycle/stage-transition.service.spec.ts`
 
 Jest coverage is intentionally scoped to business-logic service files:
 

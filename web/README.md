@@ -66,7 +66,7 @@ The API timeout is controlled by `NUXT_PUBLIC_API_TIMEOUT_MS`. The default is `6
 Default local API base:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3001
 ```
 
 Create a local environment file from the example:
@@ -78,7 +78,7 @@ cp .env.example .env
 To override it locally:
 
 ```bash
-NUXT_PUBLIC_API_BASE=http://127.0.0.1:3000 npm run dev
+NUXT_PUBLIC_API_BASE=http://127.0.0.1:3001 npm run dev
 ```
 
 For production frontend deployments, set:
@@ -109,7 +109,7 @@ npm run dev
 Nuxt will print the local frontend URL in the terminal. The backend should be running separately, usually on:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3001
 ```
 
 ## Implemented Pages / Routes
@@ -354,6 +354,8 @@ Run frontend test coverage:
 ```bash
 npm run test:coverage
 ```
+
+Coverage uses Vitest with the Istanbul provider and outputs both terminal and HTML reports.
 
 Run Vitest in watch mode:
 

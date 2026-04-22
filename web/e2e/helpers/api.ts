@@ -3,7 +3,7 @@ import type { APIRequestContext } from '@playwright/test'
 const apiBaseUrl = process.env.PLAYWRIGHT_API_BASE_URL?.trim()
   || (process.env.E2E_MODE === 'deployed'
     ? 'https://estate-transaction-api.onrender.com'
-    : 'http://127.0.0.1:3000')
+    : 'http://127.0.0.1:3001')
 
 export interface AgentSeed {
   _id: string
