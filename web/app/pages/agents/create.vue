@@ -1,189 +1,16 @@
 <script setup lang="ts">
-import axios from 'axios'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useAgentsStore } from '~/stores/agents'
-import type { CreateAgentPayload } from '~/types/agent'
-import type { ApiErrorResponse } from '~/types/api'
+import { useCreateAgentPage } from '~/composables/agents/useCreateAgentPage'
 
-interface AgentFormState {
-  fullName: string
-  email: string
-  isActive: boolean
-}
-
-interface AgentFormErrors {
-  fullName?: string
-  email?: string
-  isActive?: string
-}
-
-const agentsStore = useAgentsStore()
-
-const form = reactive<AgentFormState>({
-  email: '',
-  fullName: '',
-  isActive: true,
-})
-const fieldErrors = reactive<AgentFormErrors>({})
-const formError = ref<string | null>(null)
-const isSubmitting = ref(false)
-const fullNameInput = ref<HTMLInputElement | null>(null)
-
-const canSubmit = computed(() => !isSubmitting.value)
-
-function clearErrors(): void {
-  fieldErrors.email = undefined
-  fieldErrors.fullName = undefined
-  fieldErrors.isActive = undefined
-  formError.value = null
-}
-
-function validateForm(): CreateAgentPayload | null {
-  clearErrors()
-
-  const fullName = form.fullName.trim()
-  const email = form.email.trim().toLowerCase()
-
-  if (!fullName) {
-    fieldErrors.fullName = 'Full name is required'
-  } else if (fullName.length < 2) {
-    fieldErrors.fullName = 'Full name must be at least 2 characters'
-  }
-
-  if (!email) {
-    fieldErrors.email = 'Email is required'
-  } else if (!isValidEmail(email)) {
-    fieldErrors.email = 'Please enter a valid email address'
-  }
-
-  if (fieldErrors.fullName || fieldErrors.email) {
-    return null
-  }
-
-  return {
-    email,
-    fullName,
-    isActive: form.isActive,
-  }
-}
-
-async function submitAgent(): Promise<void> {
-  if (isSubmitting.value) {
-    return
-  }
-
-  const payload = validateForm()
-
-  if (!payload) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    await agentsStore.createAgent(payload)
-    await navigateTo('/agents')
-  } catch (error) {
-    applyBackendErrors(error)
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-function applyBackendErrors(error: unknown): void {
-  clearErrors()
-
-  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-    formError.value = agentsStore.error || 'Could not create agent'
-    return
-  }
-
-  const responseData = error.response?.data
-
-  if (!responseData) {
-    formError.value = error.message
-    return
-  }
-
-  const mappedFieldErrors = mapValidationErrors(responseData)
-
-  if (mappedFieldErrors) {
-    return
-  }
-
-  const message = normalizeErrorMessage(responseData)
-
-  if (message.toLowerCase().includes('email')) {
-    fieldErrors.email = message
-    return
-  }
-
-  formError.value = message || agentsStore.error || 'Could not create agent'
-}
-
-function mapValidationErrors(responseData: ApiErrorResponse): boolean {
-  if (!responseData.errors?.length) {
-    return false
-  }
-
-  for (const error of responseData.errors) {
-    const message = error.messages.join(', ')
-
-    if (error.field === 'fullName') {
-      fieldErrors.fullName = message
-      continue
-    }
-
-    if (error.field === 'email') {
-      fieldErrors.email = message
-      continue
-    }
-
-    if (error.field === 'isActive') {
-      fieldErrors.isActive = message
-    }
-  }
-
-  if (!fieldErrors.fullName && !fieldErrors.email && !fieldErrors.isActive) {
-    formError.value = normalizeErrorMessage(responseData)
-  }
-
-  return true
-}
-
-function normalizeErrorMessage(responseData: ApiErrorResponse): string {
-  if (Array.isArray(responseData.message)) {
-    return responseData.message.join(', ')
-  }
-
-  if (typeof responseData.message === 'string') {
-    return responseData.message
-  }
-
-  if (responseData.errors?.length) {
-    return responseData.errors
-      .flatMap((error) => error.messages)
-      .join(', ')
-  }
-
-  return 'Could not create agent'
-}
-
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
-function clearFieldError(field: keyof AgentFormErrors): void {
-  fieldErrors[field] = undefined
-
-  if (formError.value) {
-    formError.value = null
-  }
-}
-
-onMounted(() => {
-  fullNameInput.value?.focus()
-})
+const {
+  canSubmit,
+  clearFieldError,
+  fieldErrors,
+  form,
+  formError,
+  fullNameInput,
+  isSubmitting,
+  submitAgent,
+} = useCreateAgentPage()
 </script>
 
 <template>
@@ -200,9 +27,7 @@ onMounted(() => {
     <form class="agent-form-card" novalidate @submit.prevent="submitAgent">
       <header class="form-heading">
         <p>Active agent directory</p>
-        <h1 id="create-agent-title">
-          Create New Agent
-        </h1>
+        <h1 id="create-agent-title">Create New Agent</h1>
       </header>
 
       <div v-if="formError" class="form-alert" role="alert">
@@ -215,7 +40,9 @@ onMounted(() => {
           id="fullName"
           ref="fullNameInput"
           v-model="form.fullName"
-          :aria-describedby="fieldErrors.fullName ? 'fullName-error' : undefined"
+          :aria-describedby="
+            fieldErrors.fullName ? 'fullName-error' : undefined
+          "
           :aria-invalid="Boolean(fieldErrors.fullName)"
           autocomplete="name"
           data-testid="agent-full-name-input"
@@ -223,8 +50,12 @@ onMounted(() => {
           placeholder="Enter agent's full name"
           type="text"
           @input="clearFieldError('fullName')"
+        />
+        <small
+          v-if="fieldErrors.fullName"
+          id="fullName-error"
+          class="field-error"
         >
-        <small v-if="fieldErrors.fullName" id="fullName-error" class="field-error">
           {{ fieldErrors.fullName }}
         </small>
       </label>
@@ -243,7 +74,7 @@ onMounted(() => {
           placeholder="agent@example.com"
           type="email"
           @input="clearFieldError('email')"
-        >
+        />
         <small v-if="fieldErrors.email" id="email-error" class="field-error">
           {{ fieldErrors.email }}
         </small>
@@ -257,7 +88,7 @@ onMounted(() => {
           name="isActive"
           type="checkbox"
           @change="clearFieldError('isActive')"
-        >
+        />
         <span class="checkbox-control" aria-hidden="true">
           <svg viewBox="0 0 16 16">
             <path d="m3.75 8.25 2.5 2.5 6-6.5" />
@@ -285,9 +116,7 @@ onMounted(() => {
           {{ isSubmitting ? 'Creating...' : 'Create Agent' }}
         </button>
 
-        <NuxtLink class="secondary-button" to="/agents">
-          Cancel
-        </NuxtLink>
+        <NuxtLink class="secondary-button" to="/agents"> Cancel </NuxtLink>
       </div>
     </form>
   </section>

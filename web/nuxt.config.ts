@@ -1,6 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
-const defaultApiBase = 'http://127.0.0.1:3000'
+const defaultApiBase = 'http://127.0.0.1:3001'
 const defaultApiTimeoutMs = 60000
 
 const themeInitScript = `

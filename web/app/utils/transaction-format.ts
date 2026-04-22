@@ -67,9 +67,7 @@ export function isPopulatedAgent(
   )
 }
 
-export function getAgentDisplayName(
-  value: TransactionAgentReference,
-): string {
+export function getAgentDisplayName(value: TransactionAgentReference): string {
   if (isPopulatedAgent(value)) {
     return value.fullName
   }
@@ -77,9 +75,7 @@ export function getAgentDisplayName(
   return 'Unknown agent'
 }
 
-export function getAgentDisplayEmail(
-  value: TransactionAgentReference,
-): string {
+export function getAgentDisplayEmail(value: TransactionAgentReference): string {
   if (isPopulatedAgent(value)) {
     return value.email
   }
@@ -154,15 +150,16 @@ export function getCompletedRevenueSummary(
     }
   }
 
-  const totalsByCurrency = completedTransactions.reduce<
-    Record<string, number>
-  >((totals, transaction) => {
-    const currency = transaction.currency.toUpperCase()
+  const totalsByCurrency = completedTransactions.reduce<Record<string, number>>(
+    (totals, transaction) => {
+      const currency = transaction.currency.toUpperCase()
 
-    totals[currency] = (totals[currency] ?? 0) + transaction.totalServiceFee
+      totals[currency] = (totals[currency] ?? 0) + transaction.totalServiceFee
 
-    return totals
-  }, {})
+      return totals
+    },
+    {},
+  )
   const currencyTotals = Object.entries(totalsByCurrency)
     .map(([currency, amount]) => ({
       amount,

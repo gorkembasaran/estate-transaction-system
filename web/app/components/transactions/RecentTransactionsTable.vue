@@ -18,9 +18,7 @@ defineProps<{
   <section class="recent-transactions" aria-labelledby="recent-transactions">
     <div class="recent-transactions__header">
       <div>
-        <h2 id="recent-transactions">
-          Recent Transactions
-        </h2>
+        <h2 id="recent-transactions">Recent Transactions</h2>
       </div>
 
       <NuxtLink to="/transactions" class="recent-transactions__link">

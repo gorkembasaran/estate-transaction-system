@@ -43,7 +43,9 @@ const selectedAgent = computed(() => {
 
   return candidates.find((agent) => agent._id === props.modelValue) ?? null
 })
-const normalizedSearchQuery = computed(() => searchQuery.value.trim().toLowerCase())
+const normalizedSearchQuery = computed(() =>
+  searchQuery.value.trim().toLowerCase(),
+)
 const visibleAgents = computed(() => {
   if (!normalizedSearchQuery.value) {
     return props.agents.slice(0, 10)
@@ -63,7 +65,9 @@ const helperText = computed(() => {
   return 'Search active agents from the backend by full name or email.'
 })
 const shouldShowEmptyState = computed(() => {
-  return !props.loading && !isSearching.value && visibleAgents.value.length === 0
+  return (
+    !props.loading && !isSearching.value && visibleAgents.value.length === 0
+  )
 })
 
 watch(
@@ -189,9 +193,7 @@ onBeforeUnmount(() => {
     class="agent-combobox"
     :data-testid="`${name}-combobox`"
   >
-    <label class="agent-combobox-label" :for="name">
-      {{ label }} *
-    </label>
+    <label class="agent-combobox-label" :for="name"> {{ label }} * </label>
 
     <div
       class="agent-combobox-control"
@@ -240,7 +242,7 @@ onBeforeUnmount(() => {
           placeholder="Search active agents by name or email..."
           type="search"
           @keydown.esc.prevent="isOpen = false"
-        >
+        />
       </div>
 
       <div v-if="props.loading || isSearching" class="agent-loading-state">
@@ -274,7 +276,10 @@ onBeforeUnmount(() => {
         No active agents found.
       </div>
 
-      <div v-if="!normalizedSearchQuery && visibleAgents.length > 0" class="agent-result-note">
+      <div
+        v-if="!normalizedSearchQuery && visibleAgents.length > 0"
+        class="agent-result-note"
+      >
         Showing recent active agents. Type to search the backend.
       </div>
     </div>

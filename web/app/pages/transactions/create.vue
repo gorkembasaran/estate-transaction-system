@@ -1,130 +1,21 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, reactive, ref } from 'vue'
 import AgentCombobox from '~/components/agents/AgentCombobox.vue'
-import { useAgentsStore } from '~/stores/agents'
-import { useTransactionsStore } from '~/stores/transactions'
-import type { Agent } from '~/types/agent'
-import type { CreateTransactionPayload } from '~/types/transaction'
-
-const currencyOptions = [
-  { label: 'US Dollar', value: 'USD' },
-  { label: 'Euro', value: 'EUR' },
-  { label: 'Turkish Lira', value: 'TRY' },
-  { label: 'British Pound', value: 'GBP' },
-]
-
-const agentsStore = useAgentsStore()
-const transactionsStore = useTransactionsStore()
+import { useCreateTransactionPage } from '~/composables/transactions/useCreateTransactionPage'
 
 const {
-  error: agentsError,
-  isLoading: agentsLoading,
-  items: agents,
-} = storeToRefs(agentsStore)
-const { error: transactionError, isLoading: transactionLoading } =
-  storeToRefs(transactionsStore)
-
-const form = reactive<CreateTransactionPayload>({
-  currency: 'USD',
-  listingAgentId: '',
-  propertyTitle: '',
-  sellingAgentId: '',
-  totalServiceFee: 0,
-})
-const serviceFeeInput = ref('')
-const localError = ref<string | null>(null)
-const hasCompletedInitialLoad = ref(false)
-
-const isSubmitting = computed(() => transactionLoading.value)
-const isPageLoading = computed(
-  () =>
-    !hasCompletedInitialLoad.value &&
-    agents.value.length === 0 &&
-    !agentsError.value,
-)
-const formError = computed(
-  () => localError.value || transactionError.value || agentsError.value,
-)
-const hasAgents = computed(() => agents.value.length > 0)
-
-async function loadAgents(forceRefresh = false): Promise<void> {
-  try {
-    await agentsStore
-      .fetchAgents({
-        forceRefresh,
-        limit: 10,
-        page: 1,
-        status: 'active',
-      })
-      .catch(() => undefined)
-  } finally {
-    hasCompletedInitialLoad.value = true
-  }
-}
-
-async function submitTransaction(): Promise<void> {
-  localError.value = null
-
-  const serviceFee = Number(serviceFeeInput.value)
-  const payload: CreateTransactionPayload = {
-    currency: form.currency,
-    listingAgentId: form.listingAgentId,
-    propertyTitle: form.propertyTitle.trim(),
-    sellingAgentId: form.sellingAgentId,
-    totalServiceFee: serviceFee,
-  }
-
-  if (!payload.propertyTitle) {
-    localError.value = 'Property title is required.'
-    return
-  }
-
-  if (!payload.listingAgentId || !payload.sellingAgentId) {
-    localError.value = 'Listing agent and selling agent are required.'
-    return
-  }
-
-  if (!Number.isFinite(payload.totalServiceFee) || payload.totalServiceFee <= 0) {
-    localError.value = 'Service fee must be greater than zero.'
-    return
-  }
-
-  if (!currencyOptions.some((currency) => currency.value === payload.currency)) {
-    localError.value = 'Please select a supported currency.'
-    return
-  }
-
-  try {
-    await transactionsStore.createTransaction(payload)
-    await navigateTo('/transactions')
-  } catch {
-    // Store error is displayed in the form.
-  }
-}
-
-async function searchActiveAgents(query: string): Promise<Agent[]> {
-  return agentsStore.searchAgents({
-    limit: 10,
-    page: 1,
-    search: query,
-    status: 'active',
-  })
-}
-
-function resetForm(): void {
-  form.currency = 'USD'
-  form.listingAgentId = ''
-  form.propertyTitle = ''
-  form.sellingAgentId = ''
-  form.totalServiceFee = 0
-  serviceFeeInput.value = ''
-  localError.value = null
-}
-
-onMounted(() => {
-  void loadAgents()
-})
+  agents,
+  agentsLoading,
+  currencyOptions,
+  form,
+  formError,
+  hasAgents,
+  isPageLoading,
+  isSubmitting,
+  resetForm,
+  searchActiveAgents,
+  serviceFeeInput,
+  submitTransaction,
+} = useCreateTransactionPage()
 </script>
 
 <template>
@@ -139,9 +30,7 @@ onMounted(() => {
     </NuxtLink>
 
     <form class="transaction-form-card" @submit.prevent="submitTransaction">
-      <h1 id="create-title">
-        Create New Transaction
-      </h1>
+      <h1 id="create-title">Create New Transaction</h1>
 
       <div v-if="formError" class="form-alert" role="alert">
         {{ formError }}
@@ -172,7 +61,7 @@ onMounted(() => {
             name="propertyTitle"
             placeholder="Enter property title"
             type="text"
-          >
+          />
         </label>
 
         <AgentCombobox
@@ -207,7 +96,7 @@ onMounted(() => {
             placeholder="Enter service fee"
             step="0.01"
             type="number"
-          >
+          />
         </label>
 
         <label class="form-field">
@@ -247,7 +136,11 @@ onMounted(() => {
             {{ isSubmitting ? 'Creating...' : 'Create Transaction' }}
           </button>
 
-          <NuxtLink class="secondary-button" to="/transactions" @click="resetForm">
+          <NuxtLink
+            class="secondary-button"
+            to="/transactions"
+            @click="resetForm"
+          >
             Cancel
           </NuxtLink>
         </div>

@@ -1,137 +1,28 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref } from 'vue'
 import RecentTransactionsTable from '~/components/transactions/RecentTransactionsTable.vue'
 import DashboardStatCard from '~/components/ui/DashboardStatCard.vue'
-import { useAgentsStore } from '~/stores/agents'
-import { useTransactionsStore } from '~/stores/transactions'
-import type { Transaction } from '~/types/transaction'
-import {
-  getCompletedRevenueSummary,
-} from '~/utils/transaction-format'
-
-const agentsStore = useAgentsStore()
-const transactionsStore = useTransactionsStore()
-const hasCompletedInitialLoad = ref(false)
-const isDashboardLoading = ref(true)
-const completedTransactionsCount = ref<number | null>(null)
+import { useDashboardPage } from '~/composables/dashboard/useDashboardPage'
 
 const {
-  error: agentsError,
-  items: agents,
-  pagination: agentsPagination,
-} = storeToRefs(agentsStore)
-const {
-  error: transactionsError,
-  items: transactions,
-  pagination: transactionsPagination,
-} = storeToRefs(transactionsStore)
-
-const totalTransactions = computed(
-  () => transactionsPagination.value.totalItems,
-)
-const completedTransactions = computed(() => completedTransactionsCount.value ?? 0)
-const activeTransactions = computed(
-  () => Math.max(totalTransactions.value - completedTransactions.value, 0),
-)
-const successRate = computed(() => {
-  if (totalTransactions.value === 0) {
-    return 0
-  }
-
-  return Math.round(
-    (completedTransactions.value / totalTransactions.value) * 100,
-  )
-})
-const revenueSummary = computed(() =>
-  getLoadedCompletedRevenueSummary(transactions.value),
-)
-const completedTransactionsSupportingLabel = computed(
-  () =>
-    `${completedTransactions.value} of ${totalTransactions.value} transactions completed`,
-)
-const recentTransactions = computed(() => transactions.value.slice(0, 5))
-const errorMessage = computed(
-  () => transactionsError.value || agentsError.value,
-)
-const showSkeletons = computed(
-  () =>
-    !hasCompletedInitialLoad.value &&
-    isDashboardLoading.value &&
-    !errorMessage.value,
-)
-
-async function loadDashboard(forceRefresh = false): Promise<void> {
-  isDashboardLoading.value = true
-
-  try {
-    const results = await Promise.allSettled([
-      transactionsStore.fetchTransactions({
-        forceRefresh,
-        limit: 100,
-        page: 1,
-        sortBy: 'updatedAt',
-        sortOrder: 'desc',
-      }),
-      transactionsStore.fetchTransactionCount({
-        stage: 'completed',
-      }),
-      agentsStore.fetchAgents({
-        forceRefresh,
-        status: 'active',
-      }),
-    ])
-
-    const completedCountResult = results[1]
-
-    if (
-      completedCountResult.status === 'fulfilled' &&
-      typeof completedCountResult.value === 'number'
-    ) {
-      completedTransactionsCount.value = completedCountResult.value
-    }
-
-    const rejectedResult = results.find((result) => result.status === 'rejected')
-
-    if (rejectedResult?.status === 'rejected') {
-      throw rejectedResult.reason
-    }
-  } finally {
-    hasCompletedInitialLoad.value = true
-    isDashboardLoading.value = false
-  }
-}
-
-async function retryDashboard(): Promise<void> {
-  await loadDashboard(true).catch(() => undefined)
-}
-
-onMounted(() => {
-  void loadDashboard().catch(() => undefined)
-})
-
-function getLoadedCompletedRevenueSummary(transactionsValue: Transaction[]) {
-  const summary = getCompletedRevenueSummary(transactionsValue)
-  const loadedCompletedCount = transactionsValue.filter(
-    (transaction) => transaction.stage === 'completed',
-  ).length
-
-  return {
-    ...summary,
-    supportingLabel: `From ${loadedCompletedCount} loaded completed transaction${
-      loadedCompletedCount === 1 ? '' : 's'
-    }`,
-  }
-}
+  activeTransactions,
+  agentsPagination,
+  completedTransactions,
+  completedTransactionsSupportingLabel,
+  errorMessage,
+  recentTransactions,
+  retryDashboard,
+  revenueSummary,
+  showSkeletons,
+  successRate,
+  totalTransactions,
+} = useDashboardPage()
 </script>
 
 <template>
   <section class="dashboard-page" aria-labelledby="dashboard-title">
     <div class="dashboard-header">
       <div>
-        <h1 id="dashboard-title">
-          Dashboard
-        </h1>
+        <h1 id="dashboard-title">Dashboard</h1>
         <p>Overview of your estate transactions</p>
       </div>
     </div>
@@ -142,9 +33,7 @@ function getLoadedCompletedRevenueSummary(transactionsValue: Transaction[]) {
         <p>{{ errorMessage }}</p>
       </div>
 
-      <button type="button" @click="retryDashboard">
-        Retry
-      </button>
+      <button type="button" @click="retryDashboard">Retry</button>
     </div>
 
     <div class="dashboard-grid dashboard-grid--summary">

@@ -280,7 +280,9 @@ function createRequestKey(params: GetTransactionsParams): string {
   })
 }
 
-function cloneFetchParams(params: GetTransactionsParams): GetTransactionsParams {
+function cloneFetchParams(
+  params: GetTransactionsParams,
+): GetTransactionsParams {
   return {
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,

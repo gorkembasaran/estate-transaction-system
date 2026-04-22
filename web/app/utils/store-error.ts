@@ -18,9 +18,7 @@ export function getStoreErrorMessage(error: unknown): string {
     }
 
     if (responseData.errors?.length) {
-      return responseData.errors
-        .flatMap((item) => item.messages)
-        .join(', ')
+      return responseData.errors.flatMap((item) => item.messages).join(', ')
     }
 
     return error.message

@@ -32,7 +32,9 @@ interface AgentsState {
   pagination: AgentPaginationMeta
 }
 
-type FetchAgentsOptions = (GetAgentsParams & { forceRefresh?: boolean }) | boolean
+type FetchAgentsOptions =
+  | (GetAgentsParams & { forceRefresh?: boolean })
+  | boolean
 
 export const useAgentsStore = defineStore('agents', {
   state: (): AgentsState => ({

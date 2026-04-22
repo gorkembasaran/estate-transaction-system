@@ -1,268 +1,48 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
 import StageBadge from '~/components/transactions/StageBadge.vue'
-import { useTransactionsStore } from '~/stores/transactions'
-import type {
-  TransactionSortBy,
-  TransactionSortOrder,
-  TransactionStage,
-} from '~/types/transaction'
-import {
+import { useTransactionsListPage } from '~/composables/transactions/useTransactionsListPage'
+
+const {
+  clearFilters,
+  currentPage,
+  dateFrom,
+  dateFromInput,
+  dateTo,
+  dateToInput,
+  emptyStateDescription,
+  emptyStateTitle,
+  error,
   formatAmountWithCurrency,
   formatDate,
-  getAgentEditPath,
+  formatDateFilterValue,
   getAgentDisplayName,
-} from '~/utils/transaction-format'
-
-const stageOptions: Array<{ label: string; value: TransactionStage | 'all' }> = [
-  { label: 'All Stages', value: 'all' },
-  { label: 'Agreement', value: 'agreement' },
-  { label: 'Earnest Money', value: 'earnest_money' },
-  { label: 'Title Deed', value: 'title_deed' },
-  { label: 'Completed', value: 'completed' },
-]
-
-const transactionsStore = useTransactionsStore()
-const {
-  error,
+  getAgentEditPath,
+  getSortAriaSort,
+  getSortButtonLabel,
+  getSortIndicatorState,
+  goToNextPage,
+  goToPreviousPage,
+  hasActiveFilters,
+  hasMultiplePages,
   isLoading,
-  items: transactions,
+  openDatePicker,
   pagination,
-} = storeToRefs(transactionsStore)
-
-const searchQuery = ref('')
-const selectedStage = ref<TransactionStage | 'all'>('all')
-const dateFrom = ref('')
-const dateTo = ref('')
-const dateFromInput = ref<HTMLInputElement | null>(null)
-const dateToInput = ref<HTMLInputElement | null>(null)
-const currentPage = ref(1)
-const sortBy = ref<TransactionSortBy>('updatedAt')
-const sortOrder = ref<TransactionSortOrder>('desc')
-const hasCompletedInitialLoad = ref(false)
-const pageSize = 10
-
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
-const dateFilterFormatter = new Intl.DateTimeFormat('en-US', {
-  day: '2-digit',
-  month: 'short',
-  year: 'numeric',
-})
-
-const normalizedSearchQuery = computed(() =>
-  searchQuery.value.trim().toLowerCase(),
-)
-const hasActiveFilters = computed(
-  () =>
-    normalizedSearchQuery.value.length > 0 ||
-    selectedStage.value !== 'all' ||
-    dateFrom.value.length > 0 ||
-    dateTo.value.length > 0,
-)
-const resultSummary = computed(() => {
-  if (pagination.value.totalItems === 0) {
-    return 'Showing 0 of 0 transactions'
-  }
-
-  const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
-  const endItem = startItem + transactions.value.length - 1
-
-  return `Showing ${startItem}-${endItem} of ${pagination.value.totalItems} transactions`
-})
-const showSkeletonRows = computed(
-  () =>
-    !hasCompletedInitialLoad.value &&
-    transactions.value.length === 0 &&
-    !error.value,
-)
-const hasMultiplePages = computed(() => pagination.value.totalPages > 1)
-const emptyStateTitle = computed(() =>
-  hasActiveFilters.value
-    ? 'No transactions match your current filters'
-    : 'No transactions yet',
-)
-const emptyStateDescription = computed(() =>
-  hasActiveFilters.value
-    ? 'Adjust the search text or stage filter to widen the result set.'
-    : 'Create a transaction to start tracking lifecycle and commission activity.',
-)
-
-async function loadTransactions(forceRefresh = false): Promise<void> {
-  try {
-    await transactionsStore
-      .fetchTransactions({
-        forceRefresh,
-        dateFrom: dateFrom.value || undefined,
-        dateTo: dateTo.value || undefined,
-        limit: pageSize,
-        page: currentPage.value,
-        search: normalizedSearchQuery.value || undefined,
-        sortBy: sortBy.value,
-        sortOrder: sortOrder.value,
-        stage: selectedStage.value === 'all' ? undefined : selectedStage.value,
-      })
-      .catch(() => undefined)
-  } finally {
-    hasCompletedInitialLoad.value = true
-  }
-}
-
-async function retryTransactions(): Promise<void> {
-  await loadTransactions(true)
-}
-
-function goToPreviousPage(): void {
-  if (!pagination.value.hasPreviousPage || isLoading.value) {
-    return
-  }
-
-  currentPage.value -= 1
-}
-
-function goToNextPage(): void {
-  if (!pagination.value.hasNextPage || isLoading.value) {
-    return
-  }
-
-  currentPage.value += 1
-}
-
-function clearFilters(): void {
-  searchQuery.value = ''
-  selectedStage.value = 'all'
-  dateFrom.value = ''
-  dateTo.value = ''
-  resetToFirstPageAndLoad()
-}
-
-function formatDateFilterValue(value: string): string {
-  if (!value) {
-    return 'Select date'
-  }
-
-  const dateParts = value.split('-')
-  const yearValue = dateParts[0]
-  const monthValue = dateParts[1]
-  const dayValue = dateParts[2]
-
-  if (!yearValue || !monthValue || !dayValue) {
-    return value
-  }
-
-  const year = Number(yearValue)
-  const month = Number(monthValue)
-  const day = Number(dayValue)
-  const date = new Date(year, month - 1, day)
-
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return dateFilterFormatter.format(date)
-}
-
-function openDatePicker(input: HTMLInputElement | null): void {
-  if (!input) {
-    return
-  }
-
-  if (typeof input.showPicker === 'function') {
-    input.showPicker()
-    return
-  }
-
-  input.focus()
-  input.click()
-}
-
-function toggleSort(nextSortBy: TransactionSortBy): void {
-  if (sortBy.value === nextSortBy) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortBy.value = nextSortBy
-    sortOrder.value = 'desc'
-  }
-
-  resetToFirstPageAndLoad()
-}
-
-function getSortIndicatorState(
-  targetSortBy: TransactionSortBy,
-): 'neutral' | 'ascending' | 'descending' {
-  if (sortBy.value !== targetSortBy) {
-    return 'neutral'
-  }
-
-  return sortOrder.value === 'asc' ? 'ascending' : 'descending'
-}
-
-function getSortAriaSort(
-  targetSortBy: TransactionSortBy,
-): 'ascending' | 'descending' | 'none' {
-  if (sortBy.value !== targetSortBy) {
-    return 'none'
-  }
-
-  return sortOrder.value === 'asc' ? 'ascending' : 'descending'
-}
-
-function getSortButtonLabel(targetSortBy: TransactionSortBy): string {
-  const labels: Record<TransactionSortBy, string> = {
-    createdAt: 'created date',
-    totalServiceFee: 'service fee amount',
-    updatedAt: 'last update date',
-  }
-  const label = labels[targetSortBy]
-
-  if (sortBy.value !== targetSortBy) {
-    return `Sort by ${label}`
-  }
-
-  return `Sort ${label} ${
-    sortOrder.value === 'asc' ? 'descending' : 'ascending'
-  }`
-}
-
-onMounted(() => {
-  void loadTransactions()
-})
-
-watch(searchQuery, () => {
-  if (searchDebounce) {
-    clearTimeout(searchDebounce)
-  }
-
-  searchDebounce = setTimeout(() => {
-    resetToFirstPageAndLoad()
-  }, 300)
-})
-
-watch([selectedStage, dateFrom, dateTo], () => {
-  resetToFirstPageAndLoad()
-})
-
-watch(currentPage, () => {
-  void loadTransactions()
-})
-
-function resetToFirstPageAndLoad(): void {
-  if (currentPage.value === 1) {
-    void loadTransactions()
-    return
-  }
-
-  currentPage.value = 1
-}
+  resultSummary,
+  retryTransactions,
+  searchQuery,
+  selectedStage,
+  showSkeletonRows,
+  stageOptions,
+  toggleSort,
+  transactions,
+} = useTransactionsListPage()
 </script>
 
 <template>
   <section class="transactions-page" aria-labelledby="transactions-title">
     <header class="transactions-header">
       <div>
-        <h1 id="transactions-title">
-          Transactions
-        </h1>
+        <h1 id="transactions-title">Transactions</h1>
         <p>Manage all real estate transactions</p>
       </div>
 
@@ -278,9 +58,7 @@ function resetToFirstPageAndLoad(): void {
         <p>{{ error }}</p>
       </div>
 
-      <button type="button" @click="retryTransactions">
-        Retry
-      </button>
+      <button type="button" @click="retryTransactions">Retry</button>
     </div>
 
     <section class="transactions-toolbar" aria-label="Transaction filters">
@@ -294,7 +72,7 @@ function resetToFirstPageAndLoad(): void {
           type="search"
           placeholder="Search property or currency..."
           aria-label="Search transactions"
-        >
+        />
       </div>
 
       <select
@@ -326,13 +104,10 @@ function resetToFirstPageAndLoad(): void {
           :max="dateTo || undefined"
           aria-label="Filter transactions from date"
           tabindex="-1"
-        >
+        />
         <span class="date-field-copy" aria-hidden="true">
           <span class="date-field-label">From</span>
-          <span
-            class="date-field-value"
-            :class="{ 'is-empty': !dateFrom }"
-          >
+          <span class="date-field-value" :class="{ 'is-empty': !dateFrom }">
             {{ formatDateFilterValue(dateFrom) }}
           </span>
         </span>
@@ -340,7 +115,9 @@ function resetToFirstPageAndLoad(): void {
           <path d="M7 3.75v3" />
           <path d="M17 3.75v3" />
           <path d="M4.75 9.25h14.5" />
-          <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
+          <path
+            d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z"
+          />
         </svg>
       </div>
 
@@ -359,13 +136,10 @@ function resetToFirstPageAndLoad(): void {
           :min="dateFrom || undefined"
           aria-label="Filter transactions to date"
           tabindex="-1"
-        >
+        />
         <span class="date-field-copy" aria-hidden="true">
           <span class="date-field-label">To</span>
-          <span
-            class="date-field-value"
-            :class="{ 'is-empty': !dateTo }"
-          >
+          <span class="date-field-value" :class="{ 'is-empty': !dateTo }">
             {{ formatDateFilterValue(dateTo) }}
           </span>
         </span>
@@ -373,7 +147,9 @@ function resetToFirstPageAndLoad(): void {
           <path d="M7 3.75v3" />
           <path d="M17 3.75v3" />
           <path d="M4.75 9.25h14.5" />
-          <path d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z" />
+          <path
+            d="M6.75 5.25h10.5a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2H6.75a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2z"
+          />
         </svg>
       </div>
 
@@ -412,8 +188,14 @@ function resetToFirstPageAndLoad(): void {
                     viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
-                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                    <path
+                      class="sort-chevron-up"
+                      d="m4.5 9.25 3.5-3.5 3.5 3.5"
+                    />
+                    <path
+                      class="sort-chevron-down"
+                      d="m4.5 6.75 3.5 3.5 3.5-3.5"
+                    />
                   </svg>
                 </button>
               </th>
@@ -431,8 +213,14 @@ function resetToFirstPageAndLoad(): void {
                     viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
-                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                    <path
+                      class="sort-chevron-up"
+                      d="m4.5 9.25 3.5-3.5 3.5 3.5"
+                    />
+                    <path
+                      class="sort-chevron-down"
+                      d="m4.5 6.75 3.5 3.5 3.5-3.5"
+                    />
                   </svg>
                 </button>
               </th>
@@ -450,8 +238,14 @@ function resetToFirstPageAndLoad(): void {
                     viewBox="0 0 16 16"
                     aria-hidden="true"
                   >
-                    <path class="sort-chevron-up" d="m4.5 9.25 3.5-3.5 3.5 3.5" />
-                    <path class="sort-chevron-down" d="m4.5 6.75 3.5 3.5 3.5-3.5" />
+                    <path
+                      class="sort-chevron-up"
+                      d="m4.5 9.25 3.5-3.5 3.5 3.5"
+                    />
+                    <path
+                      class="sort-chevron-down"
+                      d="m4.5 6.75 3.5 3.5 3.5-3.5"
+                    />
                   </svg>
                 </button>
               </th>
@@ -468,10 +262,7 @@ function resetToFirstPageAndLoad(): void {
           </tbody>
 
           <tbody v-else-if="transactions.length > 0">
-            <tr
-              v-for="transaction in transactions"
-              :key="transaction._id"
-            >
+            <tr v-for="transaction in transactions" :key="transaction._id">
               <td>
                 <NuxtLink
                   class="property-link"
@@ -523,7 +314,9 @@ function resetToFirstPageAndLoad(): void {
                   :to="`/transactions/${transaction._id}`"
                 >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M2.75 12s3.5-5.75 9.25-5.75S21.25 12 21.25 12 17.75 17.75 12 17.75 2.75 12 2.75 12z" />
+                    <path
+                      d="M2.75 12s3.5-5.75 9.25-5.75S21.25 12 21.25 12 17.75 17.75 12 17.75 2.75 12 2.75 12z"
+                    />
                     <circle cx="12" cy="12" r="2.5" />
                   </svg>
                   View Details
@@ -554,9 +347,7 @@ function resetToFirstPageAndLoad(): void {
           Previous
         </button>
 
-        <span>
-          Page {{ pagination.page }} of {{ pagination.totalPages }}
-        </span>
+        <span> Page {{ pagination.page }} of {{ pagination.totalPages }} </span>
 
         <button
           type="button"

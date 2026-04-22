@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { defineNuxtPlugin, useRuntimeConfig } from 'nuxt/app'
 
-const defaultApiBase = 'http://127.0.0.1:3000'
+const defaultApiBase = 'http://127.0.0.1:3001'
 
 export default defineNuxtPlugin(() => {
   const config = useRuntimeConfig()

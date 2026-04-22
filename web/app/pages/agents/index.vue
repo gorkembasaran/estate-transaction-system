@@ -1,217 +1,35 @@
 <script setup lang="ts">
-import { storeToRefs } from 'pinia'
-import { computed, onMounted, ref, watch } from 'vue'
-import { useAgentsStore } from '~/stores/agents'
-import type { Agent, AgentStatusFilter, GetAgentsParams } from '~/types/agent'
-import { formatDate } from '~/utils/transaction-format'
+import { useAgentsListPage } from '~/composables/agents/useAgentsListPage'
 
-const statusOptions: Array<{ label: string; value: AgentStatusFilter }> = [
-  { label: 'All Agents', value: 'all' },
-  { label: 'Active', value: 'active' },
-  { label: 'Inactive', value: 'inactive' },
-]
-
-const agentsStore = useAgentsStore()
 const {
+  clearFilters,
+  currentPage,
+  displayedAgents,
+  emptyStateDescription,
+  emptyStateTitle,
   error,
+  formatDate,
+  getAgentInitials,
+  goToNextPage,
+  goToPreviousPage,
+  hasActiveFilters,
+  hasMultiplePages,
   isLoading,
-  items: agents,
-  lastFetchParams,
   pagination,
-} = storeToRefs(agentsStore)
-
-const searchQuery = ref('')
-const selectedStatus = ref<AgentStatusFilter>('all')
-const currentPage = ref(1)
-const pageSize = 10
-
-let searchDebounce: ReturnType<typeof setTimeout> | null = null
-
-const normalizedSearchQuery = computed(() => searchQuery.value.trim())
-const hasSearch = computed(() => normalizedSearchQuery.value.length > 0)
-const hasActiveFilters = computed(
-  () => hasSearch.value || selectedStatus.value !== 'all',
-)
-const currentFetchParams = computed(() => ({
-  limit: pageSize,
-  page: currentPage.value,
-  search: normalizedSearchQuery.value || undefined,
-  status: selectedStatus.value,
-}))
-const isCurrentQueryLoaded = computed(() =>
-  doFetchParamsMatch(lastFetchParams.value, currentFetchParams.value),
-)
-const displayedAgents = computed(() =>
-  isCurrentQueryLoaded.value ? agents.value : [],
-)
-const showSkeletonRows = computed(
-  () =>
-    !isCurrentQueryLoaded.value &&
-    !error.value,
-)
-const hasMultiplePages = computed(
-  () => isCurrentQueryLoaded.value && pagination.value.totalPages > 1,
-)
-const resultScopeLabel = computed(() => {
-  if (selectedStatus.value === 'active') {
-    return 'active agent'
-  }
-
-  if (selectedStatus.value === 'inactive') {
-    return 'inactive agent'
-  }
-
-  return 'agent'
-})
-const resultSummary = computed(() => {
-  if (!isCurrentQueryLoaded.value && error.value) {
-    return 'Could not load agents'
-  }
-
-  if (!isCurrentQueryLoaded.value) {
-    return 'Loading agents...'
-  }
-
-  const scopeLabel = `${resultScopeLabel.value}${
-    pagination.value.totalItems === 1 ? '' : 's'
-  }`
-
-  if (pagination.value.totalItems === 0) {
-    return `Showing 0 of 0 ${scopeLabel}`
-  }
-
-  const startItem = (pagination.value.page - 1) * pagination.value.limit + 1
-  const endItem = startItem + displayedAgents.value.length - 1
-
-  return `Showing ${startItem}-${endItem} of ${
-    pagination.value.totalItems
-  } ${scopeLabel}`
-})
-const emptyStateTitle = computed(() => {
-  if (hasActiveFilters.value) {
-    return 'No agents match your current filters'
-  }
-
-  return 'No agents yet'
-})
-const emptyStateDescription = computed(() => {
-  if (hasActiveFilters.value) {
-    return 'Try a different name, email address, or status filter.'
-  }
-
-  return 'Create your first agent before creating transactions.'
-})
-
-async function loadAgents(forceRefresh = false): Promise<void> {
-  await agentsStore
-    .fetchAgents({
-      forceRefresh,
-      limit: pageSize,
-      page: currentPage.value,
-      search: normalizedSearchQuery.value || undefined,
-      status: selectedStatus.value,
-    })
-    .catch(() => undefined)
-}
-
-async function retryAgents(): Promise<void> {
-  await loadAgents(true)
-}
-
-function goToPreviousPage(): void {
-  if (!pagination.value.hasPreviousPage || isLoading.value) {
-    return
-  }
-
-  currentPage.value -= 1
-}
-
-function goToNextPage(): void {
-  if (!pagination.value.hasNextPage || isLoading.value) {
-    return
-  }
-
-  currentPage.value += 1
-}
-
-function clearFilters(): void {
-  searchQuery.value = ''
-  selectedStatus.value = 'all'
-  resetToFirstPageAndLoad()
-}
-
-function getAgentInitials(agent: Agent): string {
-  const initials = agent.fullName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join('')
-
-  return initials || 'A'
-}
-
-function resetToFirstPageAndLoad(): void {
-  if (currentPage.value === 1) {
-    void loadAgents()
-    return
-  }
-
-  currentPage.value = 1
-}
-
-function doFetchParamsMatch(
-  loadedParams: GetAgentsParams | null,
-  expectedParams: {
-    limit: number
-    page: number
-    search?: string
-    status: AgentStatusFilter
-  },
-): boolean {
-  if (!loadedParams) {
-    return false
-  }
-
-  return (
-    loadedParams.limit === expectedParams.limit &&
-    loadedParams.page === expectedParams.page &&
-    (loadedParams.search || undefined) === expectedParams.search &&
-    (loadedParams.status ?? 'all') === expectedParams.status
-  )
-}
-
-onMounted(() => {
-  void loadAgents()
-})
-
-watch(searchQuery, () => {
-  if (searchDebounce) {
-    clearTimeout(searchDebounce)
-  }
-
-  searchDebounce = setTimeout(() => {
-    resetToFirstPageAndLoad()
-  }, 300)
-})
-
-watch(selectedStatus, () => {
-  resetToFirstPageAndLoad()
-})
-
-watch(currentPage, () => {
-  void loadAgents()
-})
+  resultSummary,
+  retryAgents,
+  searchQuery,
+  selectedStatus,
+  showSkeletonRows,
+  statusOptions,
+} = useAgentsListPage()
 </script>
 
 <template>
   <section class="agents-page" aria-labelledby="agents-title">
     <header class="agents-header">
       <div>
-        <h1 id="agents-title">
-          Agents
-        </h1>
+        <h1 id="agents-title">Agents</h1>
         <p>Manage real estate agents</p>
       </div>
 
@@ -227,9 +45,7 @@ watch(currentPage, () => {
         <p>{{ error }}</p>
       </div>
 
-      <button type="button" @click="retryAgents">
-        Retry
-      </button>
+      <button type="button" @click="retryAgents">Retry</button>
     </div>
 
     <section class="agents-toolbar" aria-label="Agent filters">
@@ -244,7 +60,7 @@ watch(currentPage, () => {
             type="search"
             placeholder="Search agents by name or email..."
             aria-label="Search agents"
-          >
+          />
         </div>
 
         <select
@@ -320,10 +136,7 @@ watch(currentPage, () => {
               </td>
               <td>{{ formatDate(agent.createdAt) }}</td>
               <td>
-                <NuxtLink
-                  class="edit-link"
-                  :to="`/agents/${agent._id}/edit`"
-                >
+                <NuxtLink class="edit-link" :to="`/agents/${agent._id}/edit`">
                   Edit Agent
                 </NuxtLink>
               </td>
