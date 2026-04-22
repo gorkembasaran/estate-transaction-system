@@ -152,9 +152,13 @@ describe('AgentsService', () => {
 
     await service.getAllAgents({ page: 2, limit: 5, search: 'gorkem' });
 
-    expect(agentModel.find).toHaveBeenCalledWith({
-      $or: [{ fullName: expect.any(RegExp) }, { email: expect.any(RegExp) }],
-    });
+    const filter = getFirstMockCallArg<{
+      $or: Array<{ email?: RegExp; fullName?: RegExp }>;
+    }>(agentModel.find);
+
+    expect(filter.$or).toHaveLength(2);
+    expect(filter.$or[0]?.fullName).toBeInstanceOf(RegExp);
+    expect(filter.$or[1]?.email).toBeInstanceOf(RegExp);
     expect(query.skip).toHaveBeenCalledWith(5);
     expect(query.limit).toHaveBeenCalledWith(5);
   });
@@ -308,6 +312,17 @@ function createFindQuery(result: unknown) {
     skip: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
   };
+}
+
+function getFirstMockCallArg<T>(mock: jest.Mock): T {
+  const calls = mock.mock.calls as unknown as Array<[T]>;
+  const firstCall = calls[0];
+
+  if (!firstCall) {
+    throw new Error('Expected mock to be called at least once');
+  }
+
+  return firstCall[0];
 }
 
 function createCountQuery(result: number) {

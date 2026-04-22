@@ -1,4 +1,3 @@
-import { BadRequestException } from '@nestjs/common';
 import { CommissionService } from './commission.service';
 
 describe('CommissionService', () => {

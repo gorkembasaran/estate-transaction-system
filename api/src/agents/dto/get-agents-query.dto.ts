@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { trimString } from '../../common/utils';
 
 export const AGENT_STATUS_FILTERS = ['all', 'active', 'inactive'] as const;
 
@@ -26,7 +27,7 @@ export class GetAgentsQueryDto {
     description: 'Case-insensitive search by full name or email.',
     example: 'sarah',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) => trimString(value))
   @IsString()
   @IsOptional()
   search?: string;

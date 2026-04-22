@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { createPaginationMeta } from '../../common/pagination';
 import { CreateAgentDto } from '../dto/create-agent.dto';
 import { GetAgentsQueryDto } from '../dto/get-agents-query.dto';
 import { UpdateAgentDto } from '../dto/update-agent.dto';
@@ -42,18 +43,10 @@ export class AgentsService {
       this.agentModel.find(filter).sort(sort).skip(skip).limit(limit).exec(),
       this.agentModel.countDocuments(filter).exec(),
     ]);
-    const totalPages = Math.ceil(totalItems / limit);
 
     return {
       items,
-      meta: {
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1 && totalItems > 0,
-        limit,
-        page,
-        totalItems,
-        totalPages,
-      },
+      meta: createPaginationMeta({ limit, page, totalItems }),
     };
   }
 

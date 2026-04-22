@@ -6,6 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { AgentsService } from '../../../agents/services';
+import { createPaginationMeta } from '../../../common/pagination';
 import {
   TRANSACTION_AGENT_POPULATE_FIELDS,
   TRANSACTION_LISTING_AGENT_PATH,
@@ -74,18 +75,10 @@ export class TransactionsService {
         .exec(),
       this.transactionModel.countDocuments(filter).exec(),
     ]);
-    const totalPages = Math.ceil(totalItems / limit);
 
     return {
       items,
-      meta: {
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1 && totalItems > 0,
-        limit,
-        page,
-        totalItems,
-        totalPages,
-      },
+      meta: createPaginationMeta({ limit, page, totalItems }),
     };
   }
 
