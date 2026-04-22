@@ -25,6 +25,7 @@ const DEFAULT_LIMIT = 100
 
 let fetchTransactionsPromise: Promise<void> | null = null
 let fetchTransactionsKey: string | null = null
+let latestFetchTransactionsRequestId = 0
 
 interface TransactionsState {
   items: Transaction[]
@@ -84,10 +85,15 @@ export const useTransactionsStore = defineStore('transactions', {
       this.isLoading = true
       this.error = null
       fetchTransactionsKey = requestKey
+      const requestId = ++latestFetchTransactionsRequestId
 
       fetchTransactionsPromise = (async () => {
         try {
           const response = await getTransactions(params)
+
+          if (requestId !== latestFetchTransactionsRequestId) {
+            return
+          }
 
           this.items = response.items
           this.pagination = response.meta
@@ -95,12 +101,17 @@ export const useTransactionsStore = defineStore('transactions', {
           this.lastFetchKey = requestKey
           this.lastFetchParams = cloneFetchParams(params)
         } catch (error) {
-          this.error = getStoreErrorMessage(error)
+          if (requestId === latestFetchTransactionsRequestId) {
+            this.error = getStoreErrorMessage(error)
+          }
+
           throw error
         } finally {
-          this.isLoading = false
-          fetchTransactionsPromise = null
-          fetchTransactionsKey = null
+          if (requestId === latestFetchTransactionsRequestId) {
+            this.isLoading = false
+            fetchTransactionsPromise = null
+            fetchTransactionsKey = null
+          }
         }
       })()
 
