@@ -1,44 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { useThemeMode } from '~/composables/theme/useThemeMode'
 
-type ThemeMode = 'light' | 'dark'
-
-const themeMode = ref<ThemeMode>('light')
-
-const themeToggleLabel = computed(() =>
-  themeMode.value === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
-)
-
-function applyTheme(mode: ThemeMode): void {
-  themeMode.value = mode
-  document.documentElement.dataset.theme = mode
-  document.documentElement.style.colorScheme = mode
-  localStorage.setItem('estate-manager-theme', mode)
-}
-
-function toggleTheme(): void {
-  applyTheme(themeMode.value === 'dark' ? 'light' : 'dark')
-}
-
-onMounted(() => {
-  const currentTheme = document.documentElement.dataset.theme
-
-  if (currentTheme === 'light' || currentTheme === 'dark') {
-    themeMode.value = currentTheme
-    return
-  }
-
-  const savedTheme = localStorage.getItem('estate-manager-theme')
-
-  if (savedTheme === 'light' || savedTheme === 'dark') {
-    applyTheme(savedTheme)
-    return
-  }
-
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-
-  applyTheme(prefersDark ? 'dark' : 'light')
-})
+const { themeMode, themeToggleLabel, toggleTheme } = useThemeMode()
 </script>
 
 <template>

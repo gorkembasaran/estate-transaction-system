@@ -53,7 +53,7 @@ function parseNodeEnvironment(value: unknown): NodeEnvironment {
 }
 
 function parsePort(value: unknown) {
-  const rawPort = parseOptionalString(value) ?? '3000';
+  const rawPort = parseOptionalString(value) ?? '3001';
   const port = Number(rawPort);
 
   if (!Number.isInteger(port) || port < 1 || port > 65535) {

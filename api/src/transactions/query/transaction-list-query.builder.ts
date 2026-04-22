@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { escapeRegex } from '../../common/utils';
 import {
   GetTransactionsQueryDto,
   type TransactionSortField,
@@ -103,10 +104,6 @@ function buildTransactionSort(
   return {
     [sortBy]: sortDirection,
   };
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function createDateBoundary(value: string, boundary: 'start' | 'end') {

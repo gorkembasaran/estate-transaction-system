@@ -4,11 +4,11 @@ const isDeployedMode = process.env.E2E_MODE === 'deployed'
 const frontendBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim()
   || (isDeployedMode
     ? 'https://estate-transaction-system.vercel.app'
-    : 'http://127.0.0.1:3001')
+    : 'http://127.0.0.1:3000')
 const apiBaseUrl = process.env.PLAYWRIGHT_API_BASE_URL?.trim()
   || (isDeployedMode
     ? 'https://estate-transaction-api.onrender.com'
-    : 'http://127.0.0.1:3000')
+    : 'http://127.0.0.1:3001')
 const shouldReuseExistingServer = process.env.E2E_REUSE_SERVER === 'true'
 const e2eMongoUri = process.env.E2E_MONGODB_URI?.trim()
   || 'mongodb://127.0.0.1:27017'
@@ -41,12 +41,12 @@ export default defineConfig({
           cwd: '../api',
           env: {
             ...process.env,
-            FRONTEND_ORIGIN: 'http://127.0.0.1:3001,http://localhost:3001',
+            FRONTEND_ORIGIN: 'http://127.0.0.1:3000,http://localhost:3000',
             HOST: '127.0.0.1',
             MONGODB_DATABASE: e2eMongoDatabase,
             MONGODB_URI: e2eMongoUri,
             NODE_ENV: 'test',
-            PORT: '3000',
+            PORT: '3001',
           },
           reuseExistingServer: shouldReuseExistingServer,
           timeout: 120_000,
@@ -58,7 +58,7 @@ export default defineConfig({
           env: {
             ...process.env,
             NITRO_HOST: '127.0.0.1',
-            NITRO_PORT: '3001',
+            NITRO_PORT: '3000',
             NUXT_PUBLIC_API_BASE: apiBaseUrl,
             NUXT_PUBLIC_API_TIMEOUT_MS: process.env.NUXT_PUBLIC_API_TIMEOUT_MS
               || '60000',

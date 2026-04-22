@@ -38,6 +38,22 @@ function createAgentsResponse(
   }
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve
+    reject = promiseReject
+  })
+
+  return {
+    promise,
+    reject,
+    resolve,
+  }
+}
+
 describe('agents store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -91,6 +107,52 @@ describe('agents store', () => {
     await store.fetchAgents({ limit: 10, page: 1, status: 'all' })
 
     expect(getAgentsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores stale list responses when a newer query finishes first', async () => {
+    const olderQueryAgent = createAgent({
+      _id: 'agent-old-query',
+      fullName: 'Older Query Agent',
+    })
+    const newerQueryAgent = createAgent({
+      _id: 'agent-new-query',
+      fullName: 'Newer Query Agent',
+    })
+    const olderRequest = createDeferred<PaginatedAgentsResponse>()
+    const newerRequest = createDeferred<PaginatedAgentsResponse>()
+
+    getAgentsMock
+      .mockReturnValueOnce(olderRequest.promise)
+      .mockReturnValueOnce(newerRequest.promise)
+
+    const store = useAgentsStore()
+    const olderFetch = store.fetchAgents({
+      limit: 10,
+      page: 1,
+      search: 'older',
+      status: 'all',
+    })
+    const newerFetch = store.fetchAgents({
+      limit: 10,
+      page: 1,
+      search: 'newer',
+      status: 'all',
+    })
+
+    newerRequest.resolve(createAgentsResponse([newerQueryAgent]))
+    await newerFetch
+
+    olderRequest.resolve(createAgentsResponse([olderQueryAgent]))
+    await olderFetch
+
+    expect(store.items).toEqual([newerQueryAgent])
+    expect(store.lastFetchParams).toEqual({
+      limit: 10,
+      page: 1,
+      search: 'newer',
+      status: 'all',
+    })
+    expect(store.isLoading).toBe(false)
   })
 
   it('does not locally prepend created agents into a filtered/paginated list', async () => {

@@ -109,7 +109,7 @@ describe('TransactionsService', () => {
   });
 
   it('starts every created transaction in agreement stage', async () => {
-    transactionModel.create.mockImplementation(async (payload) => payload);
+    transactionModel.create.mockImplementation(resolveWithPayload);
 
     const transaction = await service.createTransaction(createTransactionDto);
 
@@ -138,7 +138,7 @@ describe('TransactionsService', () => {
       changedAt: new Date('2026-04-16T12:00:00.000Z'),
     };
     stageTransitionService.createHistoryItem.mockReturnValue(historyItem);
-    transactionModel.create.mockImplementation(async (payload) => payload);
+    transactionModel.create.mockImplementation(resolveWithPayload);
 
     const transaction = await service.createTransaction(createTransactionDto);
 
@@ -482,6 +482,10 @@ function createFindQuery(result: unknown) {
     skip: jest.fn().mockReturnThis(),
     sort: jest.fn().mockReturnThis(),
   };
+}
+
+function resolveWithPayload(payload: unknown) {
+  return Promise.resolve(payload);
 }
 
 function createCountQuery(result: number) {

@@ -1,3 +1,4 @@
+import { escapeRegex } from '../../common/utils';
 import { GetAgentsQueryDto } from '../dto/get-agents-query.dto';
 
 export type AgentListFilter = {
@@ -53,8 +54,4 @@ function buildAgentFilter(query: GetAgentsQueryDto): AgentListFilter {
   }
 
   return filter;
-}
-
-function escapeRegex(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

@@ -43,9 +43,7 @@ export async function getAgentById(id: string): Promise<Agent> {
   return data
 }
 
-export async function createAgent(
-  payload: CreateAgentPayload,
-): Promise<Agent> {
+export async function createAgent(payload: CreateAgentPayload): Promise<Agent> {
   const { data } = await getApiClient().post<Agent>('/agents', payload)
 
   return data

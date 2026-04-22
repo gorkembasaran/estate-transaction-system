@@ -8,10 +8,11 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { trimLowercaseString, trimString } from '../../common/utils';
 
 export class UpdateAgentDto {
   @ApiPropertyOptional({ example: 'Sarah Johnson', minLength: 2 })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) => trimString(value))
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
@@ -19,9 +20,7 @@ export class UpdateAgentDto {
   fullName?: string;
 
   @ApiPropertyOptional({ example: 'sarah.johnson@example.com' })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(({ value }: { value: unknown }) => trimLowercaseString(value))
   @IsEmail()
   @IsNotEmpty()
   @IsOptional()

@@ -8,19 +8,18 @@ import {
   IsString,
   MinLength,
 } from 'class-validator';
+import { trimLowercaseString, trimString } from '../../common/utils';
 
 export class CreateAgentDto {
   @ApiProperty({ example: 'Sarah Johnson', minLength: 2 })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) => trimString(value))
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
   fullName: string;
 
   @ApiProperty({ example: 'sarah.johnson@example.com' })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toLowerCase() : value,
-  )
+  @Transform(({ value }: { value: unknown }) => trimLowercaseString(value))
   @IsEmail()
   @IsNotEmpty()
   email: string;

@@ -33,15 +33,6 @@ const numberFormatter = new Intl.NumberFormat('en-US', {
 const currencySymbolOverrides: Record<string, string> = {
   TRY: '₺',
 }
-const comparisonPeriodInMs = 30 * 24 * 60 * 60 * 1000
-
-export type MetricTone = 'positive' | 'negative' | 'neutral'
-
-export interface CompletedTransactionsTrendSummary {
-  label: string
-  tone: MetricTone
-}
-
 export interface RevenueSummary {
   currencyTotals: Array<{
     amount: number
@@ -67,9 +58,7 @@ export function isPopulatedAgent(
   )
 }
 
-export function getAgentDisplayName(
-  value: TransactionAgentReference,
-): string {
+export function getAgentDisplayName(value: TransactionAgentReference): string {
   if (isPopulatedAgent(value)) {
     return value.fullName
   }
@@ -77,9 +66,7 @@ export function getAgentDisplayName(
   return 'Unknown agent'
 }
 
-export function getAgentDisplayEmail(
-  value: TransactionAgentReference,
-): string {
+export function getAgentDisplayEmail(value: TransactionAgentReference): string {
   if (isPopulatedAgent(value)) {
     return value.email
   }
@@ -154,15 +141,16 @@ export function getCompletedRevenueSummary(
     }
   }
 
-  const totalsByCurrency = completedTransactions.reduce<
-    Record<string, number>
-  >((totals, transaction) => {
-    const currency = transaction.currency.toUpperCase()
+  const totalsByCurrency = completedTransactions.reduce<Record<string, number>>(
+    (totals, transaction) => {
+      const currency = transaction.currency.toUpperCase()
 
-    totals[currency] = (totals[currency] ?? 0) + transaction.totalServiceFee
+      totals[currency] = (totals[currency] ?? 0) + transaction.totalServiceFee
 
-    return totals
-  }, {})
+      return totals
+    },
+    {},
+  )
   const currencyTotals = Object.entries(totalsByCurrency)
     .map(([currency, amount]) => ({
       amount,
@@ -181,93 +169,4 @@ export function getCompletedRevenueSummary(
     }`,
     value: currencyTotals[0]?.formattedAmount ?? '0',
   }
-}
-
-export function getCompletedTransactionsTrendSummary(
-  transactions: Transaction[],
-): CompletedTransactionsTrendSummary | null {
-  const now = Date.now()
-  const currentPeriodStart = now - comparisonPeriodInMs
-  const previousPeriodStart = currentPeriodStart - comparisonPeriodInMs
-
-  let currentPeriodCount = 0
-  let previousPeriodCount = 0
-
-  for (const transaction of transactions) {
-    if (transaction.stage !== 'completed') {
-      continue
-    }
-
-    const completedAt = getTransactionCompletedAt(transaction)
-
-    if (!completedAt) {
-      continue
-    }
-
-    if (completedAt >= currentPeriodStart && completedAt <= now) {
-      currentPeriodCount += 1
-      continue
-    }
-
-    if (
-      completedAt >= previousPeriodStart &&
-      completedAt < currentPeriodStart
-    ) {
-      previousPeriodCount += 1
-    }
-  }
-
-  if (currentPeriodCount === 0 && previousPeriodCount === 0) {
-    return null
-  }
-
-  if (previousPeriodCount === 0) {
-    return {
-      label: 'New activity',
-      tone: 'neutral',
-    }
-  }
-
-  const delta = currentPeriodCount - previousPeriodCount
-
-  if (delta > 0) {
-    return {
-      label: `+${delta} vs prev. 30d`,
-      tone: 'positive',
-    }
-  }
-
-  if (delta < 0) {
-    return {
-      label: `${delta} vs prev. 30d`,
-      tone: 'negative',
-    }
-  }
-
-  return {
-    label: 'Stable',
-    tone: 'neutral',
-  }
-}
-
-function getTransactionCompletedAt(transaction: Transaction): number | null {
-  const completedHistoryItem = [...transaction.stageHistory]
-    .reverse()
-    .find((historyItem) => historyItem.toStage === 'completed')
-
-  return (
-    getTimestamp(completedHistoryItem?.changedAt) ??
-    getTimestamp(transaction.updatedAt) ??
-    getTimestamp(transaction.createdAt)
-  )
-}
-
-function getTimestamp(value: string | undefined): number | null {
-  if (!value) {
-    return null
-  }
-
-  const timestamp = new Date(value).getTime()
-
-  return Number.isNaN(timestamp) ? null : timestamp
 }

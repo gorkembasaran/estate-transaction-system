@@ -45,6 +45,22 @@ function createTransactionsResponse(
   }
 }
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+    resolve = promiseResolve
+    reject = promiseReject
+  })
+
+  return {
+    promise,
+    reject,
+    resolve,
+  }
+}
+
 describe('transactions store', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -115,6 +131,58 @@ describe('transactions store', () => {
     expect(getTransactionCountMock).toHaveBeenCalledWith({
       stage: 'completed',
     })
+  })
+
+  it('ignores stale list responses when a newer query finishes first', async () => {
+    const olderQueryTransaction = createTransaction({
+      _id: 'transaction-old-query',
+      propertyTitle: 'Older Query Transaction',
+    })
+    const newerQueryTransaction = createTransaction({
+      _id: 'transaction-new-query',
+      propertyTitle: 'Newer Query Transaction',
+    })
+    const olderRequest = createDeferred<PaginatedTransactionsResponse>()
+    const newerRequest = createDeferred<PaginatedTransactionsResponse>()
+
+    getTransactionsMock
+      .mockReturnValueOnce(olderRequest.promise)
+      .mockReturnValueOnce(newerRequest.promise)
+
+    const store = useTransactionsStore()
+    const olderFetch = store.fetchTransactions({
+      limit: 10,
+      page: 1,
+      search: 'older',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    })
+    const newerFetch = store.fetchTransactions({
+      limit: 10,
+      page: 1,
+      search: 'newer',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+    })
+
+    newerRequest.resolve(createTransactionsResponse([newerQueryTransaction]))
+    await newerFetch
+
+    olderRequest.resolve(createTransactionsResponse([olderQueryTransaction]))
+    await olderFetch
+
+    expect(store.items).toEqual([newerQueryTransaction])
+    expect(store.lastFetchParams).toEqual({
+      dateFrom: undefined,
+      dateTo: undefined,
+      limit: 10,
+      page: 1,
+      search: 'newer',
+      sortBy: 'updatedAt',
+      sortOrder: 'desc',
+      stage: undefined,
+    })
+    expect(store.isLoading).toBe(false)
   })
 
   it('does not locally prepend created transactions into a filtered/paginated list', async () => {

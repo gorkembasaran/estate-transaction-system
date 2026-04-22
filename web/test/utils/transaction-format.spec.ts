@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { createAgent, createTransaction } from '../factories'
 import {
   formatAmountWithCurrency,
@@ -6,7 +6,6 @@ import {
   getAgentDisplayEmail,
   getAgentDisplayName,
   getCompletedRevenueSummary,
-  getCompletedTransactionsTrendSummary,
   getTransactionStageLabel,
   isPopulatedAgent,
 } from '~/utils/transaction-format'
@@ -74,28 +73,4 @@ describe('transaction-format utilities', () => {
     ])
   })
 
-  it('describes completed activity trend without fake percentage growth', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-04-21T12:00:00.000Z'))
-
-    const trend = getCompletedTransactionsTrendSummary([
-      createTransaction({
-        stage: 'completed',
-        stageHistory: [
-          {
-            changedAt: '2026-04-20T12:00:00.000Z',
-            fromStage: 'title_deed',
-            toStage: 'completed',
-          },
-        ],
-      }),
-    ])
-
-    expect(trend).toEqual({
-      label: 'New activity',
-      tone: 'neutral',
-    })
-
-    vi.useRealTimers()
-  })
 })

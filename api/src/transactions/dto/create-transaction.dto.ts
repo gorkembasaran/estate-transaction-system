@@ -9,10 +9,11 @@ import {
   Length,
   Min,
 } from 'class-validator';
+import { trimString, trimUppercaseString } from '../../common/utils';
 
 export class CreateTransactionDto {
   @ApiProperty({ example: 'Luxury Penthouse Downtown' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) => trimString(value))
   @IsString()
   @IsNotEmpty()
   propertyTitle: string;
@@ -24,9 +25,7 @@ export class CreateTransactionDto {
   totalServiceFee: number;
 
   @ApiProperty({ example: 'USD', maxLength: 3, minLength: 3 })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
-  )
+  @Transform(({ value }: { value: unknown }) => trimUppercaseString(value))
   @IsString()
   @IsNotEmpty()
   @Length(3, 3)

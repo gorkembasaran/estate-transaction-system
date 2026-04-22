@@ -20,6 +20,7 @@ const DEFAULT_LIMIT = 100
 
 let fetchAgentsPromise: Promise<void> | null = null
 let fetchAgentsKey: string | null = null
+let latestFetchAgentsRequestId = 0
 
 interface AgentsState {
   items: Agent[]
@@ -32,7 +33,9 @@ interface AgentsState {
   pagination: AgentPaginationMeta
 }
 
-type FetchAgentsOptions = (GetAgentsParams & { forceRefresh?: boolean }) | boolean
+type FetchAgentsOptions =
+  | (GetAgentsParams & { forceRefresh?: boolean })
+  | boolean
 
 export const useAgentsStore = defineStore('agents', {
   state: (): AgentsState => ({
@@ -73,10 +76,15 @@ export const useAgentsStore = defineStore('agents', {
       this.isLoading = true
       this.error = null
       fetchAgentsKey = requestKey
+      const requestId = ++latestFetchAgentsRequestId
 
       fetchAgentsPromise = (async () => {
         try {
           const response = await getAgents(params)
+
+          if (requestId !== latestFetchAgentsRequestId) {
+            return
+          }
 
           this.items = response.items
           this.pagination = response.meta
@@ -84,12 +92,17 @@ export const useAgentsStore = defineStore('agents', {
           this.lastFetchKey = requestKey
           this.lastFetchParams = cloneFetchParams(params)
         } catch (error) {
-          this.error = getStoreErrorMessage(error)
+          if (requestId === latestFetchAgentsRequestId) {
+            this.error = getStoreErrorMessage(error)
+          }
+
           throw error
         } finally {
-          this.isLoading = false
-          fetchAgentsPromise = null
-          fetchAgentsKey = null
+          if (requestId === latestFetchAgentsRequestId) {
+            this.isLoading = false
+            fetchAgentsPromise = null
+            fetchAgentsKey = null
+          }
         }
       })()
 

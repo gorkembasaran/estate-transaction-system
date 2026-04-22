@@ -1,231 +1,18 @@
 <script setup lang="ts">
-import axios from 'axios'
-import { computed, onMounted, reactive, ref } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useAgentsStore } from '~/stores/agents'
-import type { Agent, UpdateAgentPayload } from '~/types/agent'
-import type { ApiErrorResponse } from '~/types/api'
+import { useEditAgentPage } from '~/composables/agents/useEditAgentPage'
 
-interface AgentFormState {
-  fullName: string
-  email: string
-  isActive: boolean
-}
-
-interface AgentFormErrors {
-  fullName?: string
-  email?: string
-  isActive?: string
-}
-
-const route = useRoute()
-const agentsStore = useAgentsStore()
 const {
+  canSubmit,
+  clearFieldError,
   error,
-  isLoading,
-  selectedAgent,
-} = storeToRefs(agentsStore)
-
-const form = reactive<AgentFormState>({
-  email: '',
-  fullName: '',
-  isActive: true,
-})
-const fieldErrors = reactive<AgentFormErrors>({})
-const formError = ref<string | null>(null)
-const isSubmitting = ref(false)
-const fullNameInput = ref<HTMLInputElement | null>(null)
-const hasCompletedInitialLoad = ref(false)
-
-const agentId = computed(() => {
-  const id = route.params.id
-
-  return Array.isArray(id) ? id[0] : String(id)
-})
-const pageAgent = computed(() =>
-  selectedAgent.value?._id === agentId.value ? selectedAgent.value : null,
-)
-const isInitialLoading = computed(
-  () =>
-    !hasCompletedInitialLoad.value &&
-    !pageAgent.value &&
-    !error.value,
-)
-const canSubmit = computed(() => !isSubmitting.value && Boolean(pageAgent.value))
-
-async function loadAgent(): Promise<void> {
-  try {
-    await agentsStore.fetchAgentById(agentId.value)
-    populateForm(agentsStore.selectedAgent)
-  } finally {
-    hasCompletedInitialLoad.value = true
-  }
-}
-
-function populateForm(agent: Agent | null): void {
-  if (!agent) {
-    return
-  }
-
-  form.email = agent.email
-  form.fullName = agent.fullName
-  form.isActive = agent.isActive
-}
-
-function clearErrors(): void {
-  fieldErrors.email = undefined
-  fieldErrors.fullName = undefined
-  fieldErrors.isActive = undefined
-  formError.value = null
-}
-
-function validateForm(): UpdateAgentPayload | null {
-  clearErrors()
-
-  const fullName = form.fullName.trim()
-  const email = form.email.trim().toLowerCase()
-
-  if (!fullName) {
-    fieldErrors.fullName = 'Full name is required'
-  } else if (fullName.length < 2) {
-    fieldErrors.fullName = 'Full name must be at least 2 characters'
-  }
-
-  if (!email) {
-    fieldErrors.email = 'Email is required'
-  } else if (!isValidEmail(email)) {
-    fieldErrors.email = 'Please enter a valid email address'
-  }
-
-  if (fieldErrors.fullName || fieldErrors.email) {
-    return null
-  }
-
-  return {
-    email,
-    fullName,
-    isActive: form.isActive,
-  }
-}
-
-async function submitAgent(): Promise<void> {
-  if (isSubmitting.value) {
-    return
-  }
-
-  const payload = validateForm()
-
-  if (!payload) {
-    return
-  }
-
-  isSubmitting.value = true
-
-  try {
-    await agentsStore.updateAgent(agentId.value, payload)
-    await navigateTo('/agents')
-  } catch (error) {
-    applyBackendErrors(error)
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-function applyBackendErrors(error: unknown): void {
-  clearErrors()
-
-  if (!axios.isAxiosError<ApiErrorResponse>(error)) {
-    formError.value = agentsStore.error || 'Could not update agent'
-    return
-  }
-
-  const responseData = error.response?.data
-
-  if (!responseData) {
-    formError.value = error.message
-    return
-  }
-
-  const mappedFieldErrors = mapValidationErrors(responseData)
-
-  if (mappedFieldErrors) {
-    return
-  }
-
-  const message = normalizeErrorMessage(responseData)
-
-  if (message.toLowerCase().includes('email')) {
-    fieldErrors.email = message
-    return
-  }
-
-  formError.value = message || agentsStore.error || 'Could not update agent'
-}
-
-function mapValidationErrors(responseData: ApiErrorResponse): boolean {
-  if (!responseData.errors?.length) {
-    return false
-  }
-
-  for (const error of responseData.errors) {
-    const message = error.messages.join(', ')
-
-    if (error.field === 'fullName') {
-      fieldErrors.fullName = message
-      continue
-    }
-
-    if (error.field === 'email') {
-      fieldErrors.email = message
-      continue
-    }
-
-    if (error.field === 'isActive') {
-      fieldErrors.isActive = message
-    }
-  }
-
-  if (!fieldErrors.fullName && !fieldErrors.email && !fieldErrors.isActive) {
-    formError.value = normalizeErrorMessage(responseData)
-  }
-
-  return true
-}
-
-function normalizeErrorMessage(responseData: ApiErrorResponse): string {
-  if (Array.isArray(responseData.message)) {
-    return responseData.message.join(', ')
-  }
-
-  if (typeof responseData.message === 'string') {
-    return responseData.message
-  }
-
-  if (responseData.errors?.length) {
-    return responseData.errors
-      .flatMap((error) => error.messages)
-      .join(', ')
-  }
-
-  return 'Could not update agent'
-}
-
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
-function clearFieldError(field: keyof AgentFormErrors): void {
-  fieldErrors[field] = undefined
-
-  if (formError.value) {
-    formError.value = null
-  }
-}
-
-onMounted(async () => {
-  await loadAgent().catch(() => undefined)
-  fullNameInput.value?.focus()
-})
+  fieldErrors,
+  form,
+  formError,
+  fullNameInput,
+  isInitialLoading,
+  isSubmitting,
+  submitAgent,
+} = useEditAgentPage()
 </script>
 
 <template>
@@ -242,9 +29,7 @@ onMounted(async () => {
     <form class="agent-form-card" novalidate @submit.prevent="submitAgent">
       <header class="form-heading">
         <p>Agent profile</p>
-        <h1 id="edit-agent-title">
-          Edit Agent
-        </h1>
+        <h1 id="edit-agent-title">Edit Agent</h1>
       </header>
 
       <div v-if="error && !formError" class="form-alert" role="alert">
@@ -277,7 +62,9 @@ onMounted(async () => {
             id="fullName"
             ref="fullNameInput"
             v-model="form.fullName"
-            :aria-describedby="fieldErrors.fullName ? 'fullName-error' : undefined"
+            :aria-describedby="
+              fieldErrors.fullName ? 'fullName-error' : undefined
+            "
             :aria-invalid="Boolean(fieldErrors.fullName)"
             autocomplete="name"
             data-testid="agent-full-name-input"
@@ -285,7 +72,7 @@ onMounted(async () => {
             placeholder="Enter agent's full name"
             type="text"
             @input="clearFieldError('fullName')"
-          >
+          />
           <small
             v-if="fieldErrors.fullName"
             id="fullName-error"
@@ -309,7 +96,7 @@ onMounted(async () => {
             placeholder="agent@example.com"
             type="email"
             @input="clearFieldError('email')"
-          >
+          />
           <small v-if="fieldErrors.email" id="email-error" class="field-error">
             {{ fieldErrors.email }}
           </small>
@@ -323,7 +110,7 @@ onMounted(async () => {
             name="isActive"
             type="checkbox"
             @change="clearFieldError('isActive')"
-          >
+          />
           <span class="checkbox-control" aria-hidden="true">
             <svg viewBox="0 0 16 16">
               <path d="m3.75 8.25 2.5 2.5 6-6.5" />
@@ -352,9 +139,7 @@ onMounted(async () => {
             {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
           </button>
 
-          <NuxtLink class="secondary-button" to="/agents">
-            Cancel
-          </NuxtLink>
+          <NuxtLink class="secondary-button" to="/agents"> Cancel </NuxtLink>
         </div>
       </template>
     </form>

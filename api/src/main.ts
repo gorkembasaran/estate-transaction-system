@@ -33,4 +33,4 @@ async function bootstrap() {
   Logger.log(`Swagger docs are available at ${rootUrl}/docs`, LOG_CONTEXT);
 }
 
-bootstrap();
+void bootstrap();

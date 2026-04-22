@@ -9,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { trimString, trimStringToUndefined } from '../../common/utils';
 import { TRANSACTION_STAGES } from '../enums/transaction-stage.enum';
 import type { TransactionStage } from '../enums/transaction-stage.enum';
 
@@ -47,7 +48,7 @@ export class GetTransactionsQueryDto {
     description: 'Case-insensitive search by property title or currency.',
     example: 'penthouse',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }: { value: unknown }) => trimString(value))
   @IsString()
   @IsOptional()
   search?: string;
@@ -56,9 +57,7 @@ export class GetTransactionsQueryDto {
     description: 'Inclusive createdAt start date filter.',
     example: '2026-04-01',
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() || undefined : value,
-  )
+  @Transform(({ value }: { value: unknown }) => trimStringToUndefined(value))
   @IsDateString()
   @IsOptional()
   dateFrom?: string;
@@ -67,9 +66,7 @@ export class GetTransactionsQueryDto {
     description: 'Inclusive createdAt end date filter.',
     example: '2026-04-30',
   })
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() || undefined : value,
-  )
+  @Transform(({ value }: { value: unknown }) => trimStringToUndefined(value))
   @IsDateString()
   @IsOptional()
   dateTo?: string;
