@@ -165,17 +165,17 @@ Backend variables:
 
 ```env
 NODE_ENV=development
-PORT=3000
+PORT=3001
 MONGODB_URI=mongodb+srv://<username>:<password>@<cluster-url>/
 MONGODB_DATABASE=estate_transaction_system
-FRONTEND_ORIGIN=https://estate-transaction-system.vercel.app
+FRONTEND_ORIGIN=http://127.0.0.1:3000,http://localhost:3000
 API_PREFIX=
 ```
 
 Frontend variables:
 
 ```env
-NUXT_PUBLIC_API_BASE=https://estate-transaction-api.onrender.com
+NUXT_PUBLIC_API_BASE=http://127.0.0.1:3001
 NUXT_PUBLIC_API_TIMEOUT_MS=60000
 ```
 
@@ -191,7 +191,7 @@ npm run start:dev
 Default backend URL:
 
 ```text
-http://localhost:3000
+http://127.0.0.1:3001
 ```
 
 The backend expects MongoDB to be available locally or through a configured MongoDB Atlas connection string. Full backend setup details are documented in `api/README.md`.
@@ -207,10 +207,16 @@ npm run dev
 The frontend reads the API base URL from `NUXT_PUBLIC_API_BASE` when provided. If it is not set, the Nuxt config currently defaults to:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:3001
 ```
 
-The frontend is expected to run against the local backend during development.
+The frontend development server normally runs on:
+
+```text
+http://localhost:3000
+```
+
+The frontend is expected to run against the local backend on port `3001` during development.
 
 Production URLs:
 
@@ -298,7 +304,16 @@ src/agents/**/*.service.ts
 src/transactions/**/*.service.ts
 ```
 
+Backend coverage is generated through Jest's Istanbul-based coverage reporting.
+
 Frontend unit/component tests are implemented under `web/` with Vitest and cover shared formatting utilities, store error handling, reusable UI components, async agent combobox behavior, and query-aware store mutation flows.
+
+Frontend coverage is generated through Vitest with the Istanbul coverage provider:
+
+```bash
+cd web
+npm run test:coverage
+```
 
 Frontend browser-level E2E tests are implemented under `web/e2e` with Playwright. The local suite covers smoke checks, agent create/edit flow, and transaction lifecycle completion. A deployed smoke mode is also available for the public frontend and backend URLs.
 

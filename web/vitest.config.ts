@@ -29,7 +29,7 @@ export default defineConfig({
         'test/**',
         'vitest.config.ts',
       ],
-      provider: 'v8',
+      provider: 'istanbul',
       reporter: ['text', 'html'],
     },
     css: false,
