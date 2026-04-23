@@ -163,4 +163,129 @@ describe('AgentCombobox', () => {
 
     expect(wrapper.text()).toContain('No active agents found.')
   })
+
+  it('shows a search error when backend agent search fails', async () => {
+    vi.useFakeTimers()
+    const wrapper = mount(AgentCombobox, {
+      props: {
+        agents: [],
+        label: 'Listing Agent',
+        modelValue: '',
+        name: 'listingAgentId',
+        searchAgents: vi
+          .fn<[], Promise<Agent[]>>()
+          .mockRejectedValue(new Error('Search failed')),
+      },
+    })
+
+    await wrapper.find('.agent-combobox-control').trigger('click')
+    await wrapper.find('input[type="search"]').setValue('missing')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Could not search active agents.')
+  })
+
+  it('ignores stale async search responses when a newer search finishes first', async () => {
+    vi.useFakeTimers()
+    const olderRequest = createDeferred<Agent[]>()
+    const newerRequest = createDeferred<Agent[]>()
+    const olderAgent = createAgent({
+      _id: 'agent-older',
+      fullName: 'Older Agent',
+    })
+    const newerAgent = createAgent({
+      _id: 'agent-newer',
+      fullName: 'Newer Agent',
+    })
+    const searchAgents = vi
+      .fn<[], Promise<Agent[]>>()
+      .mockReturnValueOnce(olderRequest.promise)
+      .mockReturnValueOnce(newerRequest.promise)
+    const wrapper = mount(AgentCombobox, {
+      props: {
+        agents: [],
+        label: 'Listing Agent',
+        modelValue: '',
+        name: 'listingAgentId',
+        searchAgents,
+      },
+    })
+
+    await wrapper.find('.agent-combobox-control').trigger('click')
+    await wrapper.find('input[type="search"]').setValue('old')
+    await vi.advanceTimersByTimeAsync(300)
+    await wrapper.find('input[type="search"]').setValue('new')
+    await vi.advanceTimersByTimeAsync(300)
+
+    newerRequest.resolve([newerAgent])
+    await flushPromises()
+    olderRequest.resolve([olderAgent])
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Newer Agent')
+    expect(wrapper.text()).not.toContain('Older Agent')
+  })
+
+  it('clears a selected agent and reopens the dropdown', async () => {
+    const agent = createAgent({
+      _id: 'agent-selected',
+      email: 'selected@example.com',
+      fullName: 'Selected Agent',
+    })
+    const wrapper = mount(AgentCombobox, {
+      props: {
+        agents: [agent],
+        label: 'Listing Agent',
+        modelValue: 'agent-selected',
+        name: 'listingAgentId',
+      },
+    })
+
+    await wrapper.find('.agent-clear-button').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([['']])
+    expect(wrapper.find('.agent-dropdown').exists()).toBe(true)
+
+    await wrapper.setProps({ modelValue: '' })
+
+    expect(wrapper.text()).toContain('Search active agents')
+  })
+
+  it('does not open the dropdown while disabled', async () => {
+    const wrapper = mount(AgentCombobox, {
+      props: {
+        agents: [],
+        disabled: true,
+        label: 'Listing Agent',
+        modelValue: '',
+        name: 'listingAgentId',
+      },
+    })
+
+    await wrapper.find('.agent-combobox-control').trigger('click')
+
+    expect(wrapper.find('.agent-dropdown').exists()).toBe(false)
+  })
+
+  it('closes the dropdown when the user clicks outside', async () => {
+    const wrapper = mount(AgentCombobox, {
+      attachTo: document.body,
+      props: {
+        agents: [createAgent()],
+        label: 'Listing Agent',
+        modelValue: '',
+        name: 'listingAgentId',
+      },
+    })
+
+    await wrapper.find('.agent-combobox-control').trigger('click')
+    expect(wrapper.find('.agent-dropdown').exists()).toBe(true)
+
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+
+    expect(wrapper.find('.agent-dropdown').exists()).toBe(false)
+    wrapper.unmount()
+  })
 })
