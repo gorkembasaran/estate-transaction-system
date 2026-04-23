@@ -2,6 +2,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createTransaction as createTransactionRequest,
+  getTransactionBreakdown,
+  getTransactionById,
   getTransactionCount,
   getTransactions,
   updateTransactionStage as updateTransactionStageRequest,
@@ -23,6 +25,8 @@ vi.mock('~/services/transaction.service', () => ({
 }))
 
 const getTransactionsMock = vi.mocked(getTransactions)
+const getTransactionBreakdownMock = vi.mocked(getTransactionBreakdown)
+const getTransactionByIdMock = vi.mocked(getTransactionById)
 const getTransactionCountMock = vi.mocked(getTransactionCount)
 const createTransactionMock = vi.mocked(createTransactionRequest)
 const updateTransactionStageMock = vi.mocked(updateTransactionStageRequest)
@@ -131,6 +135,85 @@ describe('transactions store', () => {
     expect(getTransactionCountMock).toHaveBeenCalledWith({
       stage: 'completed',
     })
+  })
+
+  it('supports the boolean force-refresh shorthand with default list params', async () => {
+    getTransactionsMock.mockResolvedValueOnce(createTransactionsResponse([]))
+
+    const store = useTransactionsStore()
+    await store.fetchTransactions(true)
+
+    expect(getTransactionsMock).toHaveBeenCalledWith({
+      limit: 100,
+      page: 1,
+    })
+  })
+
+  it('stores backend errors when transaction listing fails', async () => {
+    getTransactionsMock.mockRejectedValueOnce(
+      new Error('Could not load transactions'),
+    )
+
+    const store = useTransactionsStore()
+
+    await expect(
+      store.fetchTransactions({ stage: 'completed' }),
+    ).rejects.toThrow('Could not load transactions')
+    expect(store.error).toBe('Could not load transactions')
+    expect(store.isLoading).toBe(false)
+  })
+
+  it('stores a selected transaction by id and syncs its breakdown', async () => {
+    const breakdown = {
+      agencyAmount: 500,
+      calculatedAt: '2026-04-18T10:00:00.000Z',
+      listingAgentAmount: 250,
+      listingAgentReason: 'Listing agent receives half of the agent pool.',
+      sellingAgentAmount: 250,
+      sellingAgentReason: 'Selling agent receives half of the agent pool.',
+    }
+    const transaction = createTransaction({
+      _id: 'transaction-detail',
+      breakdown,
+      stage: 'completed',
+    })
+
+    getTransactionByIdMock.mockResolvedValueOnce(transaction)
+
+    const store = useTransactionsStore()
+    await store.fetchTransactionById('transaction-detail')
+
+    expect(getTransactionByIdMock).toHaveBeenCalledWith('transaction-detail')
+    expect(store.selectedTransaction).toEqual(transaction)
+    expect(store.breakdown).toEqual(breakdown)
+    expect(store.isLoading).toBe(false)
+  })
+
+  it('fetches a transaction breakdown and keeps selected transaction state in sync', async () => {
+    const breakdown = {
+      agencyAmount: 600,
+      calculatedAt: '2026-04-18T10:00:00.000Z',
+      listingAgentAmount: 300,
+      listingAgentReason: 'Listing agent receives half of the agent pool.',
+      sellingAgentAmount: 300,
+      sellingAgentReason: 'Selling agent receives half of the agent pool.',
+    }
+
+    getTransactionBreakdownMock.mockResolvedValueOnce(breakdown)
+
+    const store = useTransactionsStore()
+    store.selectedTransaction = createTransaction({
+      _id: 'transaction-with-breakdown',
+      breakdown: null,
+    })
+
+    const result = await store.fetchTransactionBreakdown(
+      'transaction-with-breakdown',
+    )
+
+    expect(result).toEqual(breakdown)
+    expect(store.breakdown).toEqual(breakdown)
+    expect(store.selectedTransaction?.breakdown).toEqual(breakdown)
   })
 
   it('ignores stale list responses when a newer query finishes first', async () => {
@@ -299,5 +382,38 @@ describe('transactions store', () => {
       sortOrder: undefined,
       stage: 'title_deed',
     })
+  })
+
+  it('updates detail state without refreshing when no list query exists yet', async () => {
+    const listingAgent = createAgent({
+      _id: 'agent-listing',
+      email: 'listing@example.com',
+      fullName: 'Listing Agent',
+    })
+    const sellingAgent = createAgent({
+      _id: 'agent-selling',
+      email: 'selling@example.com',
+      fullName: 'Selling Agent',
+    })
+    const updatedTransaction = createTransaction({
+      _id: 'transaction-without-list',
+      listingAgentId: listingAgent,
+      sellingAgentId: sellingAgent,
+      stage: 'completed',
+    })
+
+    updateTransactionStageMock.mockResolvedValueOnce(updatedTransaction)
+
+    const store = useTransactionsStore()
+    const result = await store.updateTransactionStage(
+      'transaction-without-list',
+      'completed',
+    )
+
+    expect(result).toEqual(updatedTransaction)
+    expect(store.selectedTransaction).toEqual(updatedTransaction)
+    expect(store.breakdown).toEqual(updatedTransaction.breakdown)
+    expect(store.lastFetchedAt).toBeNull()
+    expect(getTransactionsMock).not.toHaveBeenCalled()
   })
 })

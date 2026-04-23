@@ -2,6 +2,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createAgent as createAgentRequest,
+  getAgentById,
   getAgents,
   updateAgent as updateAgentRequest,
 } from '~/services/agent.service'
@@ -17,6 +18,7 @@ vi.mock('~/services/agent.service', () => ({
 }))
 
 const getAgentsMock = vi.mocked(getAgents)
+const getAgentByIdMock = vi.mocked(getAgentById)
 const createAgentMock = vi.mocked(createAgentRequest)
 const updateAgentMock = vi.mocked(updateAgentRequest)
 
@@ -107,6 +109,47 @@ describe('agents store', () => {
     await store.fetchAgents({ limit: 10, page: 1, status: 'all' })
 
     expect(getAgentsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('supports the boolean force-refresh shorthand with default list params', async () => {
+    getAgentsMock.mockResolvedValueOnce(createAgentsResponse([]))
+
+    const store = useAgentsStore()
+    await store.fetchAgents(true)
+
+    expect(getAgentsMock).toHaveBeenCalledWith({
+      limit: 100,
+      page: 1,
+      status: 'all',
+    })
+  })
+
+  it('stores a selected agent by id', async () => {
+    const agent = createAgent({
+      _id: 'agent-detail',
+      fullName: 'Detail Agent',
+    })
+
+    getAgentByIdMock.mockResolvedValueOnce(agent)
+
+    const store = useAgentsStore()
+    await store.fetchAgentById('agent-detail')
+
+    expect(getAgentByIdMock).toHaveBeenCalledWith('agent-detail')
+    expect(store.selectedAgent).toEqual(agent)
+    expect(store.isLoading).toBe(false)
+  })
+
+  it('stores backend errors when agent listing fails', async () => {
+    getAgentsMock.mockRejectedValueOnce(new Error('Could not load agents'))
+
+    const store = useAgentsStore()
+
+    await expect(store.fetchAgents({ status: 'active' })).rejects.toThrow(
+      'Could not load agents',
+    )
+    expect(store.error).toBe('Could not load agents')
+    expect(store.isLoading).toBe(false)
   })
 
   it('ignores stale list responses when a newer query finishes first', async () => {
@@ -211,6 +254,26 @@ describe('agents store', () => {
     })
   })
 
+  it('creates an agent without trying to refresh when no list query exists yet', async () => {
+    const createdAgent = createAgent({
+      _id: 'agent-created-without-list',
+      email: 'created-without-list@example.com',
+      fullName: 'Created Without List',
+    })
+
+    createAgentMock.mockResolvedValueOnce(createdAgent)
+
+    const store = useAgentsStore()
+    await store.createAgent({
+      email: 'created-without-list@example.com',
+      fullName: 'Created Without List',
+    })
+
+    expect(store.selectedAgent).toEqual(createdAgent)
+    expect(store.lastFetchedAt).toBeNull()
+    expect(getAgentsMock).not.toHaveBeenCalled()
+  })
+
   it('refreshes the last list query after updating an agent', async () => {
     const inactiveAgent = createAgent({
       _id: 'agent-1',
@@ -246,6 +309,27 @@ describe('agents store', () => {
       search: 'inactive',
       status: 'inactive',
     })
+  })
+
+  it('keeps the current list intact when agent update fails', async () => {
+    const existingAgent = createAgent({
+      _id: 'agent-existing',
+      fullName: 'Existing Agent',
+    })
+
+    getAgentsMock.mockResolvedValueOnce(createAgentsResponse([existingAgent]))
+    updateAgentMock.mockRejectedValueOnce(new Error('Duplicate email'))
+
+    const store = useAgentsStore()
+    await store.fetchAgents({ limit: 10, page: 1, status: 'all' })
+
+    await expect(
+      store.updateAgent('agent-existing', { email: 'duplicate@example.com' }),
+    ).rejects.toThrow('Duplicate email')
+
+    expect(store.items).toEqual([existingAgent])
+    expect(store.error).toBe('Duplicate email')
+    expect(store.isLoading).toBe(false)
   })
 
   it('searches active agents for combobox usage without mutating list state', async () => {
